@@ -1,0 +1,46 @@
+{
+  "name": "3ellwa-space",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "vite build apps/web",
+    "dev": "npm run build:web && wrangler dev",
+    "dev:web": "vite apps/web",
+    "deploy": "npm run build:web && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "typecheck": "tsc -p worker && tsc -p apps/web",
+    "test:web": "vitest run --root apps/web",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "test:part25": "node scripts/part25-test.mjs",
+    "test:part3": "node scripts/part3-test.mjs",
+    "test:part4": "node scripts/part4-test.mjs"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "hono": "^4.13.14",
+    "qrcode-generator": "^2.0.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261030.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.156.0"
+  }
+}
