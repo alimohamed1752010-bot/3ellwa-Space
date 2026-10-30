@@ -4,7 +4,8 @@ export interface Env {
   MEDIA: R2Bucket;
   ASSETS: Fetcher;
   ADMIN_PATH: string;
-  ADMIN_PASSWORD_HASH: string;
+  ADMIN_PASSWORD?: string; // plain-text Cloudflare secret; preferred
+  ADMIN_PASSWORD_HASH?: string; // legacy PBKDF2 hash; optional fallback
   DISCORD_AUTH_WEBHOOK_URL: string;
   SESSION_SECRET: string;
   ENCRYPTION_KEY?: string; // used from Part 7

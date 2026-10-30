@@ -67,7 +67,7 @@ function country(c: Context<AppEnv>) {
 
 // POST /api/auth/password
 authRoutes.post("/password", async (c) => {
-  if (!secretReady(c) || !c.env.ADMIN_PASSWORD_HASH) return notConfigured(c);
+  if (!secretReady(c) || (!c.env.ADMIN_PASSWORD && !c.env.ADMIN_PASSWORD_HASH)) return notConfigured(c);
   const body = z.object({ password: z.string().min(1).max(1024) }).safeParse(await c.req.json().catch(() => null));
   if (!body.success) return apiError(c, 400, "bad_request", "Password required.");
 
@@ -76,7 +76,11 @@ authRoutes.post("/password", async (c) => {
   if (wait) return lockedResponse(c, wait);
   await cleanup(c);
 
-  const ok = await verifyPassword(body.data.password, c.env.ADMIN_PASSWORD_HASH);
+  // Prefer the plain-text ADMIN_PASSWORD secret when configured. safeEqual
+  // performs a constant-time comparison; retain hash support for existing installs.
+  const ok = c.env.ADMIN_PASSWORD
+    ? safeEqual(body.data.password, c.env.ADMIN_PASSWORD)
+    : await verifyPassword(body.data.password, c.env.ADMIN_PASSWORD_HASH ?? "");
   await record(c, ip, "password", ok);
   if (!ok) {
     const nowLocked = await lockedFor(c, ip, "password");
