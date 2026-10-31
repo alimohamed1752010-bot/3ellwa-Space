@@ -48,7 +48,10 @@ if(announcementId){const hidden=await call("PUT",`/api/admin/announcements/${ann
 const seoInitial=await call("GET","/api/admin/seo-privacy");const seoInitialData=await seoInitial.json();
 check("SEO privacy defaults to indexing disabled",seoInitial.status===200&&seoInitialData.settings?.indexingEnabled===false,seoInitial.status);
 const robotsDefault=await fetch(base+"/robots.txt");const robotsDefaultText=await robotsDefault.text();
-check("robots.txt blocks crawling by default",robotsDefault.status===200&&robotsDefaultText.includes("Disallow: /")&&!robotsDefaultText.includes("Sitemap:"),robotsDefault.status);
+check("robots.txt allows crawlers to observe noindex while hiding admin APIs",robotsDefault.status===200&&robotsDefaultText.includes("Allow: /")&&robotsDefaultText.includes("Disallow: /api/")&&robotsDefaultText.includes("Disallow: /admin/")&&!robotsDefaultText.includes("Sitemap:"),robotsDefault.status);
+const privateHome=await fetch(base+"/");
+const privateHomeHtml=await privateHome.text();
+check("public pages send noindex headers and metadata by default",privateHome.status===200&&privateHome.headers.get("x-robots-tag")==="noindex, nofollow"&&privateHomeHtml.includes('<meta name="robots" content="noindex,nofollow" />'));
 const sitemapDefault=await fetch(base+"/sitemap.xml");
 check("sitemap is unavailable by default",sitemapDefault.status===404,sitemapDefault.status);
 const seoEnabled=await call("PUT","/api/admin/seo-privacy",{indexingEnabled:true,siteTitle:"Integration test site",siteDescription:"SEO test description."});
@@ -59,7 +62,9 @@ const sitemapEnabled=await fetch(base+"/sitemap.xml");const sitemapText=await si
 check("sitemap is generated when indexing is enabled",sitemapEnabled.status===200&&sitemapText.includes("<urlset"),sitemapEnabled.status);
 const seoDisabled=await call("PUT","/api/admin/seo-privacy",{indexingEnabled:false,siteTitle:"Integration test site",siteDescription:"SEO test description."});
 const robotsDisabled=await fetch(base+"/robots.txt");const robotsDisabledText=await robotsDisabled.text();
-check("robots.txt blocks crawling after indexing is disabled",seoDisabled.status===200&&robotsDisabledText.includes("Disallow: /")&&!robotsDisabledText.includes("Sitemap:"),robotsDisabled.status);
+check("robots.txt preserves crawl access for noindex after indexing is disabled",seoDisabled.status===200&&robotsDisabledText.includes("Allow: /")&&robotsDisabledText.includes("Disallow: /api/")&&robotsDisabledText.includes("Disallow: /admin/")&&!robotsDisabledText.includes("Sitemap:"),robotsDisabled.status);
+const privateHomeAfterDisable=await fetch(base+"/");
+check("public pages remain marked noindex after indexing is disabled",privateHomeAfterDisable.headers.get("x-robots-tag")==="noindex, nofollow");
 const sitemapDisabled=await fetch(base+"/sitemap.xml");
 check("sitemap is unavailable while indexing is disabled",sitemapDisabled.status===404,sitemapDisabled.status);
 
