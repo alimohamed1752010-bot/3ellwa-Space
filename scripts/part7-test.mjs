@@ -20,9 +20,10 @@ r=await fetch(base+"/api/auth/password",{method:"POST",headers,body:JSON.stringi
 const verified=await fetch(base+"/api/auth/code",{method:"POST",headers,body:JSON.stringify({challengeId:challenge.challengeId,code})});
 const cookie=(verified.headers.get("set-cookie")??"").split(";")[0];check("password plus Discord OTP creates a session",verified.status===200&&!!cookie,verified.status);
 const H={...headers,cookie};
-const analytics=await call("GET","/api/admin/analytics/summary?days=7");const analyticsData=await analytics.json();check("analytics summary includes the tracked page view",analytics.status===200&&analyticsData.summary.views>=1,analytics.status);
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
 const get=async path=>(await call("GET",path)).json();
+const analytics=await call("GET","/api/admin/analytics/summary?days=7");const analyticsData=await analytics.json();check("analytics summary includes the tracked page view",analytics.status===200&&analyticsData.summary.views>=1,analytics.status);
+
 const originalRaw=(await get("/api/admin/layout")).published;
 const original={sections:originalRaw.sections.map(x=>({id:x.id,type:x.type,title:x.title,body:x.body,assetId:x.assetId,widgetId:x.widgetId,enabled:x.enabled,visibleDesktop:x.visibleDesktop,visibleMobile:x.visibleMobile}))};
 const tag=Date.now().toString(36);
