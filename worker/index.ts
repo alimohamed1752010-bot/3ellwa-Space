@@ -34,7 +34,7 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Content-Type-Options", "nosniff");
   c.header("X-Frame-Options", "DENY");
-  c.header("Referrer-Policy", c.req.path.startsWith("/api/admin") ? "no-referrer" : "strict-origin-when-cross-origin");
+  if (!c.res.headers.has("referrer-policy")) c.header("Referrer-Policy", c.req.path.startsWith("/api/admin") ? "no-referrer" : "strict-origin-when-cross-origin");
   c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
   c.header("Cross-Origin-Opener-Policy", "same-origin");
   if (new URL(c.req.url).protocol === "https:") c.header("Strict-Transport-Security", "max-age=15552000");
