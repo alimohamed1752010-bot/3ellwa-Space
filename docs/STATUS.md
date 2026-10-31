@@ -9,7 +9,7 @@ Last reconciled: 2026-10-31
 - Latest verified feature CI run [41223282478](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41223282478) completed successfully on commit `d7d372e0e5445bdc6532c0e7fa9bba59757e7aaa`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed. The CI run also uploaded a source ZIP artifact.
 - Cloudflare Worker: `3ellwa-space`; latest deployment `0c68b9b2-1cc8-4ca2-bffa-5dfc31307f04`, version `7bd78949-6d07-49c8-9112-18ffadeae561` (version 172), assigned 100% traffic at 16:31 UTC on 2026-10-31. This deployment was built from commit `6d1dc3b279571781c941df547426fed648e4abf2`, which includes the crawler-visible noindex correction.
 - Cron Trigger: `0 * * * *` (hourly UTC).
-- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
+- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so domain inventory and DNS management remain unavailable until the owner configures it. The token needs Zone Read, DNS Read, and DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the account. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
 - Public domain: https://3ellwa.space.
 - Separate private R2 backup bucket: `3ellwa-space-backups`. It currently contains no objects under `d1/` or `media/`.
 - Production backup workflow is committed but no successful backup has been verified. It validates non-empty SQL exports, checks gzip integrity, uploads a SHA-256 checksum, verifies the stored object's size via R2 metadata, and reports the media object count. Its D1 polling logic was corrected against Cloudflare's documented export API response (`result.signed_url` and `result.filename`, with `current_bookmark` polling). The four GitHub Actions secrets in `docs/BACKUP.md` remain required.
@@ -28,7 +28,8 @@ Last reconciled: 2026-10-31
 - Part 9 checkpoint 1: security headers, CSP, HSTS on HTTPS, Permissions Policy, and exact-origin validation.
 - Part 9 backup preparation: daily D1 export and R2 media mirror workflow, private backup bucket, and recovery documentation. Activation and disposable restore drill remain outstanding.
 - Part 10 checkpoint 1: read-only domain inventory API and admin screen are implemented. The API paginates zones, DNS records, and Worker custom domains (up to 2,000 entries). The screen supports filtering DNS records and copying hostnames/targets.
-- Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. The UI can run a check per DNS hostname. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check. No DNS records are changed.
+- Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check.
+- Part 10 checkpoint 3: DNS record create/edit/delete API and UI are implemented for A, AAAA, and CNAME subdomain records. Writes require a two-minute HMAC preview token, fresh Cloudflare state, exact hostname confirmation, and an explicit UI checkbox. Apex records, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. API token stays server-side. No production DNS change has been executed; CI and deployment verification are pending.
 
 ## Verification
 
@@ -39,12 +40,12 @@ Last reconciled: 2026-10-31
 
 ## Remaining acceptance work
 
-- Add `CF_API_TOKEN` as a Worker secret with Zone Read and DNS Read scoped to the `3ellwa.space` zone, plus Workers Scripts Read scoped to the account. The connected Cloudflare authorization cannot create API tokens, so this requires a user-created token.
+- Add `CF_API_TOKEN` as a Worker secret with Zone Read, DNS Read, and DNS Edit scoped to the `3ellwa.space` zone, plus Workers Scripts Read scoped to the account. The connected Cloudflare authorization cannot create API tokens, so this requires a user-created token.
 - Add the GitHub Actions `CF_API_TOKEN` secret for the manual deploy fallback with Workers Scripts Edit and the D1/R2 read permissions Wrangler needs to resolve the configured bindings. Keep this separate from the Worker runtime token where narrower scopes are appropriate.
 - Add the four GitHub Actions backup secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify both D1 and media objects in the private bucket.
 - Perform a restore drill against a disposable D1 database only.
 - Complete authenticated desktop/mobile visual acceptance, safe media upload/selection, layout loading, public page/project routes, and a real configured integration refresh.
-- Part 10 next: safe DNS record create/edit/delete operations with preview, explicit confirmation, protected-record safeguards, and audit logging. Broader connectivity checks and setup guidance remain later work.
+- Part 10 next: pass CI, verify the Worker deployment, then configure the Worker token and test only against a disposable subdomain with explicit owner approval. Broader connectivity checks and setup guidance remain later work.
 
 ## Environment
 
