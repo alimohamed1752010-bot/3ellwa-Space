@@ -193,10 +193,10 @@ describe("Navigation screen", () => {
     await u.click(await screen.findByRole("button", { name: "Add item" }));
     let dialog = await screen.findByRole("dialog");
     await u.type(within(dialog).getByLabelText("Label"), "Blog");
-    await u.type(within(dialog).getByLabelText("Target"), "/blog");
+    await u.type(within(dialog).getByLabelText("Target URL"), "/blog");
     await u.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await screen.findByRole("button", { name: "Hide Blog" })).toBeInTheDocument();
-    expect(calls.find((c) => c.method === "POST")!.body).toEqual({ label: "Blog", url: "/blog", openNewTab: false, visible: true });
+    expect(calls.find((c) => c.method === "POST")!.body).toMatchObject({ label: "Blog", targetType: "url", url: "/blog", pageId: null, openNewTab: false, visible: true });
     await u.click(screen.getByRole("button", { name: "Hide Blog" }));
     expect(await screen.findByText("(hidden)")).toBeInTheDocument();
     expect(calls.find((c) => c.path === "/api/admin/navigation/n2")!.body).toMatchObject({ visible: false, label: "Blog" });
@@ -285,8 +285,8 @@ describe("Public homepage", () => {
   it("unknown path shows the 404 view without calling the site API", async () => {
     window.history.pushState({}, "", "/nope");
     render(<PublicApp />);
-    expect(await screen.findByRole("heading", { name: "Nothing here" })).toBeInTheDocument();
-    expect(calls).toHaveLength(0);
+    await waitFor(() => expect(calls).toContainEqual(expect.objectContaining({ path: "/api/public/pages/nope", method: "GET" })));
+    expect(screen.getByText("Page not found")).toBeInTheDocument();
   });
 });
 
