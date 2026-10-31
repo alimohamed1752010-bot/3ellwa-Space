@@ -16,7 +16,8 @@
     "test:part3": "node scripts/part3-test.mjs",
     "test:part4": "node scripts/part4-test.mjs",
     "test:part5": "node scripts/part5-test.mjs",
-    "test:part6": "node scripts/part6-test.mjs"
+    "test:part6": "node scripts/part6-test.mjs",
+    "test:part7": "node scripts/part7-test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
