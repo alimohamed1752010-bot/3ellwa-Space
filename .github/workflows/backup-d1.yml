@@ -75,10 +75,23 @@ jobs:
           signed_url="$(jq -er '.result.result.signed_url' <<< "$complete")"
           export_name="$(jq -er '.result.result.filename' <<< "$complete")"
           curl --fail --silent --show-error "$signed_url" -o "$export_name"
+          test -s "$export_name"
           gzip -9 "$export_name"
+          gzip -t "$export_name.gz"
+          test -s "$export_name.gz"
+          sha256sum "$export_name.gz" > "$export_name.gz.sha256"
           stamp="$(date -u +'%Y%m%dT%H%M%SZ')"
           endpoint="https://$CF_ACCOUNT_ID.r2.cloudflarestorage.com"
-          aws s3 cp "$export_name.gz" "s3://$BACKUP_BUCKET/d1/$stamp-$export_name.gz" --endpoint-url "$endpoint" --only-show-errors
+          d1_key="d1/$stamp-$export_name.gz"
+          aws s3 cp "$export_name.gz" "s3://$BACKUP_BUCKET/$d1_key" --endpoint-url "$endpoint" --only-show-errors
+          aws s3 cp "$export_name.gz.sha256" "s3://$BACKUP_BUCKET/$d1_key.sha256" --endpoint-url "$endpoint" --only-show-errors
+          remote_size="$(aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$d1_key" --endpoint-url "$endpoint" --query ContentLength --output text)"
+          local_size="$(stat -c '%s' "$export_name.gz")"
+          if [[ "$remote_size" != "$local_size" ]]; then
+            echo "::error::Uploaded D1 backup size does not match the local export."
+            exit 1
+          fi
+          echo "Verified D1 export object: $d1_key ($remote_size bytes)"
 
       - name: Mirror uploaded media objects
         shell: bash
@@ -86,6 +99,8 @@ jobs:
           set -euo pipefail
           endpoint="https://$CF_ACCOUNT_ID.r2.cloudflarestorage.com"
           aws s3 sync "s3://$MEDIA_BUCKET/" "s3://$BACKUP_BUCKET/media/" --endpoint-url "$endpoint" --only-show-errors
+          media_count="$(aws s3 ls "s3://$BACKUP_BUCKET/media/" --recursive --endpoint-url "$endpoint" | wc -l)"
+          echo "Media backup contains $media_count object(s)."
 
       - name: Prune D1 exports older than 30 days
         shell: bash
