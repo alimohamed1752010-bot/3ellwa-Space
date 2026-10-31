@@ -15,7 +15,7 @@ function editable(record: DnsRecord, zoneName: string, workerDomains: WorkerDoma
   const suffix = "." + zoneName.toLowerCase();
   const relative = record.name.toLowerCase().endsWith(suffix) ? record.name.slice(0, -suffix.length) : "";
   return ["A", "AAAA", "CNAME"].includes(record.type)
-    && !!relative && !relative.includes(".") && !protectedLabels.has(relative.toLowerCase())
+    && !!relative && !(!relative.includes(".") && protectedLabels.has(relative.toLowerCase()))
     && !workerDomains.some(domain => domain.hostname.toLowerCase() === record.name.toLowerCase());
 }
 
