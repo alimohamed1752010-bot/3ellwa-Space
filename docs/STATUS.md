@@ -6,8 +6,8 @@ Last reconciled: 2026-10-31
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
 - Latest application checkpoint: Part 8 checkpoint 1 (privacy-conscious analytics and admin overview).
-- Latest verified CI run: [41207447422](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41207447422), passed typecheck, web tests, production build, and local Worker integration tests, including the scheduled handler test.
-- Cloudflare Worker: `3ellwa-space`; active deployment `f1cb2e3b-8d30-41aa-b2ec-4acc29fce0f5`, Worker version **147**, version ID `0dba166f-696c-4926-992d-d81e597d4832`, assigned **100% traffic**.
+- Latest verified CI run: [41209125650](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41209125650), passed typecheck, web tests, production build, and local Worker integration tests, including analytics tracking and summary assertions.
+- Cloudflare Worker: `3ellwa-space`; active deployment `20d02cac-3e87-4dfc-8b8f-f45d61889558`, Worker version **150**, version ID `2fd48712-175d-4fb6-8d20-bc8388718375`, assigned **100% traffic**.
 - Cron Trigger verified through Cloudflare API: `0 * * * *` (hourly, UTC).
 - Production bindings verified: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`.
 - Production D1 database: `3ellwa-space-db`. Migrations `0001_init.sql`, `0002_theme_presets.sql`, and `0003_layout_publishing.sql` are applied. The Part 6 `homepage_layout` setting and `publish_history` table were verified.
@@ -32,9 +32,9 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
-- CI run [41207447422](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41207447422) passed both jobs: typecheck/web tests/production build and local Worker integration tests.
+- CI run [41209125650](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41209125650) passed both jobs: typecheck/web tests/production build and local Worker integration tests, including the new analytics checks.
 - Local Part 7 integration tests confirm the scheduled handler runs successfully with no enabled providers. Provider network refreshes are not called in CI.
-- Cloudflare Builds watches the GitHub `main` branch. The successful build for the Part 7 code deployed Worker version 147. Cloudflare deployment inspection confirms 100% traffic on that version and the expected bindings.
+- Cloudflare Builds watches the GitHub `main` branch. The successful build for the Part 8 analytics code deployed Worker version 150. Cloudflare deployment inspection confirms 100% traffic on that version and the expected bindings.
 - Cloudflare's schedules API confirms the hourly cron expression is registered.
 - The remote Part 6 D1 migration and layout/publish-history queries were verified directly.
 - Do not run destructive integration suites against production. Integration tests that create/delete content must use isolated local D1/R2.
