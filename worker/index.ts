@@ -24,6 +24,7 @@ import { guestbookAdminRoutes } from "./admin/guestbook";
 import { publicGuestbookRoutes } from "./public/guestbook";
 import { announcementRoutes } from "./admin/announcements";
 import { publicAnnouncementRoutes } from "./public/announcements";
+import { seoRoutes, loadSeoSettings } from "./admin/seo";
 import { mediaPublicRoutes } from "./public/media";
 import { goRoutes, publicLinkRoutes } from "./public/links";
 
@@ -66,6 +67,7 @@ app.route("/api/admin", integrationRoutes);
 app.route("/api/admin", analyticsRoutes);
 app.route("/api/admin", guestbookAdminRoutes);
 app.route("/api/admin", announcementRoutes);
+app.route("/api/admin", seoRoutes);
 
 app.route("/api/public", publicRoutes);
 app.route("/api/public", publicProjectRoutes);
@@ -90,6 +92,24 @@ app.all("*", async (c) => {
   const url = new URL(req.url);
   const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : "/";
 
+  const seoSettings = await loadSeoSettings(env.DB);
+  if (path === "/robots.txt") {
+    const body = seoSettings.indexingEnabled
+      ? "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nSitemap: " + url.origin + "/sitemap.xml\n"
+      : "User-agent: *\nDisallow: /\n";
+    return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=300" } });
+  }
+  if (path === "/sitemap.xml") {
+    if (!seoSettings.indexingEnabled) return new Response("Not found", { status: 404, headers: { "x-robots-tag": "noindex", "cache-control": "no-store" } });
+    const [pages, projects] = await Promise.all([
+      env.DB.prepare("SELECT slug FROM pages WHERE status='published' AND visibility='public' AND indexable=1 ORDER BY slug").all<{slug:string}>(),
+      env.DB.prepare("SELECT slug FROM projects WHERE visible=1 AND status!='archived' ORDER BY slug").all<{slug:string}>(),
+    ]);
+    const locations = [url.origin + "/", url.origin + "/links", url.origin + "/projects", url.origin + "/guestbook", ...pages.results.map(x => url.origin + "/" + x.slug), ...projects.results.map(x => url.origin + "/projects/" + x.slug)];
+    const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + locations.map(loc => "  <url><loc>" + escapeXml(loc) + "</loc></url>").join("\n") + "\n</urlset>";
+    return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=300" } });
+  }
+
   // 1. Built static files (JS, CSS, images).
   const asset = await env.ASSETS.fetch(req.raw);
   // 304 (browser revalidating a cached file) is not "ok" but is still a hit; without this a refresh gets the HTML shell instead of the CSS/JS.
@@ -104,10 +124,22 @@ app.all("*", async (c) => {
   // 3. Serve the HTML shell. Wrong admin paths and unknown paths take the exact same branch (status 404).
   const shell = await env.ASSETS.fetch(new Request(new URL("/index.html", url)));
   if (!shell.ok) return new Response("Frontend not built. Run: npm run build:web", { status: 500 });
+  let pageTitle = seoSettings.siteTitle;
+  let pageDescription = seoSettings.siteDescription;
+  let indexable = isPublic && seoSettings.indexingEnabled;
+  if (isPublic && path.startsWith("/projects/")) {
+    const project = await env.DB.prepare("SELECT name,description FROM projects WHERE slug=? AND visible=1 AND status!='archived'").bind(path.slice("/projects/".length)).first<{name:string;description:string|null}>();
+    if (project) { pageTitle = project.name; pageDescription = project.description ?? pageDescription; }
+  } else if (isPublic && !["/","/links","/projects","/guestbook"].includes(path)) {
+    const page = await env.DB.prepare("SELECT title,meta_title,meta_description,indexable FROM pages WHERE slug=? AND status='published' AND visibility='public'").bind(path.slice(1)).first<{title:string;meta_title:string|null;meta_description:string|null;indexable:number}>();
+    if (page) { pageTitle = page.meta_title || page.title; pageDescription = page.meta_description || pageDescription; indexable = indexable && !!page.indexable; }
+    else indexable = false;
+  }
+  const robots = indexable ? "index,follow" : "noindex,nofollow";
   const meta = isAdmin
-    ? `<meta name="3w-shell" content="admin"><meta name="3w-base" content="${escapeAttr(adminPath!)}">`
-    : `<meta name="3w-shell" content="public">`;
-  const html = (await shell.text()).replace("<!--SHELL_BOOT-->", meta);
+    ? '<meta name="3w-shell" content="admin"><meta name="3w-base" content="' + escapeAttr(adminPath!) + '">'
+    : '<meta name="3w-shell" content="public"><meta name="description" content="' + escapeAttr(pageDescription) + '"><meta name="robots" content="' + robots + '"><meta property="og:title" content="' + escapeAttr(pageTitle) + '"><meta property="og:description" content="' + escapeAttr(pageDescription) + '">';
+  const html = (await shell.text()).replace('<meta name="robots" content="noindex" />', '<meta name="robots" content="' + robots + '" />').replace("<title>3ellwa.space</title>", "<title>" + escapeHtml(pageTitle) + "</title>").replace("<!--SHELL_BOOT-->", meta);
   const headers = new Headers({
     "content-type": "text/html; charset=utf-8",
     "x-content-type-options": "nosniff",
@@ -117,6 +149,8 @@ app.all("*", async (c) => {
   if (isAdmin) {
     headers.set("x-robots-tag", "noindex, nofollow");
     headers.set("x-frame-options", "DENY");
+  } else {
+    headers.set("x-robots-tag", indexable ? "index, follow" : "noindex, nofollow");
   }
   return new Response(req.method === "HEAD" ? null : html, { status, headers });
 });
@@ -144,6 +178,8 @@ async function publicPageExists(env: Env, path: string): Promise<boolean> {
 function escapeAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+function escapeHtml(s: string): string { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function escapeXml(s: string): string { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/\x27/g, "&apos;"); }
 
 export default {
   fetch: app.fetch,
