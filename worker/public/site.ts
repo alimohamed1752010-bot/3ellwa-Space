@@ -18,7 +18,7 @@ publicRoutes.get("/site", async (c) => {
       c.env.DB.prepare("SELECT id, platform, label, url, icon FROM social_links WHERE visible = 1 ORDER BY sort_order, rowid").all<SocialRow>(),
       c.env.DB.prepare(
         `SELECT n.id, n.label, n.target_type, n.url, n.open_new_tab, pg.slug AS page_slug, pg.is_home AS page_home
-         FROM navigation_items n LEFT JOIN pages pg ON pg.id = n.page_id AND pg.status = 'published'
+         FROM navigation_items n LEFT JOIN pages pg ON pg.id = n.page_id AND pg.status = 'published' AND pg.visibility = 'public'
          WHERE n.visible = 1 AND n.parent_id IS NULL ORDER BY n.sort_order, n.rowid`
       ).all<NavRow>(),
     ]);
