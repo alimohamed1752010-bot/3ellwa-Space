@@ -9,6 +9,16 @@ const DEFAULT_HOME_LAYOUT = { sections: [{id:"profile",type:"profile",title:"",b
 function parseHomeLayout(raw:string|null|undefined) { try { const v=raw?JSON.parse(raw):null; if(!v||!Array.isArray(v.sections)) return DEFAULT_HOME_LAYOUT; return {sections:v.sections.filter((s:any)=>s&&typeof s.id==="string"&&typeof s.type==="string"&&s.enabled!==false).map((s:any)=>({id:s.id,type:s.type,title:typeof s.title==="string"?s.title:"",body:typeof s.body==="string"?s.body:"",assetId:typeof s.assetId==="string"?s.assetId:null,widgetId:typeof s.widgetId==="string"?s.widgetId:null,enabled:s.enabled!==false,visibleDesktop:s.visibleDesktop!==false,visibleMobile:s.visibleMobile!==false}))}; } catch { return DEFAULT_HOME_LAYOUT; } }
 
 
+async function loadHomeLayout(db:D1Database,raw:string|null|undefined) {
+  const parsed=parseHomeLayout(raw);
+  const sections=await Promise.all(parsed.sections.map(async (section:any)=>{
+    if(!section.assetId)return {...section,imageUrl:null};
+    const asset=await db.prepare("SELECT id,filename FROM media_assets WHERE id=? AND kind='image'").bind(section.assetId).first<{id:string;filename:string}>();
+    return {...section,imageUrl:asset?mediaUrl(asset.id,asset.filename):null};
+  }));
+  return {sections};
+}
+
 interface SocialRow { id: string; platform: string; label: string | null; url: string; icon: string | null }
 interface NavRow { id: string; label: string; target_type: string; url: string | null; open_new_tab: number; page_slug: string | null; page_home: number | null }
 
@@ -27,7 +37,7 @@ publicRoutes.get("/site", async (c) => {
       ).all<NavRow>(),
       c.env.DB.prepare("SELECT published_json FROM site_settings WHERE key='homepage_layout'").first<{published_json:string|null}>(),
     ]);
-    profile = p; social = s.results; nav = n.results; layout = parseHomeLayout(l?.published_json);
+    profile = p; social = s.results; nav = n.results; layout = await loadHomeLayout(c.env.DB,l?.published_json);
   } catch {
     // fall through to defaults
   }
