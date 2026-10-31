@@ -39,25 +39,26 @@ Update this file at the end of every part. It is the first thing a new chat read
   - Checkpoint 2 (custom pages): implemented, not run. Includes Pages manager and block editor, public page rendering, metadata/noindex handling, gallery image picker, page targets in navigation, and draft privacy.
   - Checkpoint 3 (projects): implemented, not run. Includes project CRUD, duplicate, reorder, status/category/technologies, logo and cover images, gallery, website/GitHub/custom links, featured and visibility controls, public /projects directory and /projects/:slug details.
   - Project and custom-page slugs are checked against each other; /projects is reserved. Media usage includes project logos, covers, and gallery images.
-  - All Part 4 checkpoints are committed but not typechecked, locally tested, browser-tested, or deployed from this environment.
+  - All Part 4 checkpoints are committed and verified by GitHub Actions: Worker/web TypeScript checks, 65 web tests, production build, and 91 local Worker integration assertions all passed on 2026-10-31.
 
 ## In progress
-- Owner walkthrough (still not run): GitHub repo, Cloudflare account, D1 and R2 creation, secrets, remote migration, first deploy. Nothing of this has been run yet.
+- Infrastructure walkthrough: Cloudflare confirms the `3ellwa-space` Worker is deployed with the `3ellwa.space` custom domain enabled, DB and MEDIA bindings, and the expected secret bindings. Remote D1 contains the Part 4 tables and records `0001_init.sql` as applied. Visual owner acceptance in a real browser is still pending.
 
 ## Next
-- Verify Part 4 locally: npm install, npm run typecheck, npm run test:web, then run the local Worker with migrated D1/R2 and execute npm run test:part4. The test needs the fake Discord webhook on 127.0.0.1:9999 and a local ADMIN_PASSWORD; Discord OTP remains mandatory.
-- Browser-check the Pages, Media Library, Projects screens and public /projects pages on desktop and mobile.
-- Then continue the owner walkthrough and acceptance on the deployed Cloudflare site.
+- Complete visual acceptance on the live site at https://3ellwa.space: sign in to the admin with the existing password + Discord OTP, then inspect Pages, Media Library, Projects, and Navigation on desktop and mobile.
+- Verify the public /projects directory and one project detail route, plus a published custom page and a page-target navigation item.
+- Test one real media upload, image selection, and deletion/usage warning. Do not run destructive integration tests against production; the 91-assertion suite uses isolated local D1/R2.
+- Record any visual or live-only issues before starting Part 5.
 
-## Part 4 verification status: what was and was not verified
-This chat's sandbox had no network, so npm install was impossible: no Hono, zod, React, Vitest, Vite, or Wrangler. The Part 4 checkpoint 1, 2, and 3 changes therefore remain unverified by typecheck, jsdom tests, or a local Worker run.
-- Verified here: image-size reading (PNG, JPEG incl. progressive, GIF, WebP lossy, lossless, extended) against real files made with Pillow; filename tag helpers; the crop and resize geometry (all pass in plain Node); every new or changed .ts/.tsx file parses (syntax check only).
-- Written but never run: Part 4 media, pages, projects, and public showcase Worker routes; all Part 4 React components; scripts/part4-test.mjs (now includes media, pages, navigation, and projects regression checks).
-- Owner steps, in this order, from the repo folder:
-  1. Run `npm install`, then `npm run typecheck`. Fix any reported errors before moving on; this work has not been typechecked yet.
-  2. Run `npm run test:web` and resolve any failures.
-  3. Set local `.dev.vars` with `ADMIN_PASSWORD` and `DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook`, run `npm run dev`, then `node scripts/part4-test.mjs http://localhost:8787 "your test password"`. Re-run `node scripts/part25-test.mjs` and `node scripts/part3-test.mjs` to check regressions. OTP stays mandatory.
-  4. In a real browser, open Media Library and test upload/crop/replace/usage warnings; create and publish a page with a gallery block; create a project with logo, cover, gallery, links, and technologies; verify it appears on /projects and its detail route; test hidden projects and mobile layouts.
+## Part 4 verification status
+- GitHub Actions run: https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41198688530 — all jobs passed on 2026-10-31.
+- Typecheck: `npm run typecheck` passed for Worker and web app.
+- Web tests: `npm run test:web` passed, 65 tests.
+- Production build: `npm run build:web` passed.
+- Worker integration: local D1 migration passed and `scripts/part4-test.mjs` passed 91 assertions, including mandatory password + Discord OTP, media upload/security/CRUD, pages and draft privacy, page navigation, project CRUD/gallery/links, visibility, URL collisions, and public route shells.
+- The integration suite uses local D1/R2 and a local fake Discord webhook. It does not modify production data.
+- Cloudflare read-only inspection confirmed the production Worker deployment (version 81), enabled custom domain `3ellwa.space`, DB and MEDIA bindings, required secret bindings, and remote migration `0001_init.sql`.
+- Automated browser rendering was attempted but Cloudflare returned HTTP 429, so real desktop/mobile visual acceptance remains unverified.
 - Known risks to look at first: the native <dialog> stacking (detail dialog under the editor or delete confirmation), createImageBitmap/canvas WebP encoding in Safari (the editor shows a clear error if WebP is unsupported; pick JPEG then), and pointer-drag cropping on touch.
 
 ## Not tested yet (needs the owner)
