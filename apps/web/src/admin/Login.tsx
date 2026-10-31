@@ -46,10 +46,10 @@ export default function Login({ onAuthed }: { onAuthed: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      const res = await api.post<{ challengeId?: string; authenticated?: boolean }>("/api/auth/password", { password });
+      const res = await api.post<{ challengeId: string }>("/api/auth/password", { password });
+      if (!res.challengeId) throw new Error("The server did not create a login challenge.");
       setPassword("");
-      if (res.authenticated) return onAuthed();
-      setChallengeId(res.challengeId ?? "");
+      setChallengeId(res.challengeId);
       setCode("");
       setStep("code");
     } catch (e) {
