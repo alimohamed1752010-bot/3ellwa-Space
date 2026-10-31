@@ -19,6 +19,8 @@ type DnsCheck = {
   checkedAt: string;
 };
 
+type NsCheck = { zone: string; resolver: string; status: number; nameServers: string[]; checkedAt: string; limitation: string };
+
 export default function DomainsScreen() {
   const [data, setData] = useState<DomainData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,8 @@ export default function DomainsScreen() {
   const [copied, setCopied] = useState("");
   const [dnsChecks, setDnsChecks] = useState<Record<string, DnsCheck>>({});
   const [checkingDns, setCheckingDns] = useState("");
+  const [nsCheck, setNsCheck] = useState<NsCheck | null>(null);
+  const [checkingNs, setCheckingNs] = useState(false);
 
   const filteredRecords = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,6 +61,18 @@ export default function DomainsScreen() {
       setError(e instanceof ApiError ? e.message : "Could not check public DNS.");
     } finally {
       setCheckingDns("");
+    }
+  }, []);
+
+  const checkNameservers = useCallback(async () => {
+    setCheckingNs(true);
+    setError("");
+    try {
+      setNsCheck(await api.get<NsCheck>("/api/admin/domains/ns-check"));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not check public nameserver records.");
+    } finally {
+      setCheckingNs(false);
     }
   }, []);
 
@@ -112,6 +128,20 @@ export default function DomainsScreen() {
             <p className="text-sm">Zone status: <span className="font-medium text-ink">{data.zone.status}</span></p>
             <div className="text-xs text-muted">Nameservers</div>
             {data.zone.nameServers.length ? <ul className="space-y-1 font-mono text-xs text-muted">{data.zone.nameServers.map(ns => <li key={ns}>{ns}</li>)}</ul> : <p className="text-xs text-muted">Cloudflare did not return nameservers.</p>}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted">Public NS records (recursive resolver view)</p>
+              <Button size="sm" variant="secondary" onClick={() => void checkNameservers()} disabled={checkingNs}>{checkingNs ? "Checking…" : "Check public NS records"}</Button>
+            </div>
+            {nsCheck && <div className="rounded-control border border-line bg-raised p-3 text-xs text-muted" role="status">
+              {(() => {
+                const expected = data.zone.nameServers.map(value => value.toLowerCase().replace(/\.$/, "")).sort();
+                const actual = [...nsCheck.nameServers].sort();
+                const matches = expected.length > 0 && expected.length === actual.length && expected.every((value, index) => value === actual[index]);
+                return <p className="font-medium text-ink">{nsCheck.status === 3 ? "Public resolver reports NXDOMAIN" : matches ? "Public NS answer matches Cloudflare's assigned nameservers" : actual.length ? "Public NS answer differs from Cloudflare's assigned nameservers" : "No NS answer returned"}</p>;
+              })()}
+              {nsCheck.nameServers.length > 0 && <ul className="mt-2 space-y-1 font-mono">{nsCheck.nameServers.map(value => <li key={value}>{value}</li>)}</ul>}
+              <p className="mt-2">{nsCheck.limitation} Checked {new Date(nsCheck.checkedAt).toLocaleTimeString()}.</p>
+            </div>}
           </CardBody>
         </Card>
 
