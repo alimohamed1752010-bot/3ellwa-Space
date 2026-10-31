@@ -7,7 +7,7 @@ import ProjectsPage from "./ProjectsPage";
 import LocalTime from "./LocalTime";
 import TypingSubtitle from "./TypingSubtitle";
 import { useLinks } from "./useLinks";
-import { isEmptySite, useSite } from "./useSite";
+import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import type { PublicSite } from "./useSite";
 
 function Orb() {
@@ -142,7 +142,7 @@ function ProfileView({ site }: { site: PublicSite }) {
 }
 
 function Home() {
-  const s = useSite();
+  const s = usePublicSite();
   if (s.status === "loading") return <Spinner />;
   if (s.status === "error" || !s.data) return <SiteError retry={s.retry} />;
   if (isEmptySite(s.data)) return <EmptyState />;
@@ -167,6 +167,7 @@ function NotFound() {
 export default function PublicApp() {
   return (
     <BrowserRouter>
+      <PublicSiteProvider>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/links" element={<LinksPage />} />
@@ -175,6 +176,7 @@ export default function PublicApp() {
         <Route path="/:slug" element={<PublicPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </PublicSiteProvider>
     </BrowserRouter>
   );
 }
