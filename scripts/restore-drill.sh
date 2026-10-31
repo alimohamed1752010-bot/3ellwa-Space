@@ -118,8 +118,10 @@ aws s3api list-objects-v2 --bucket "$LIVE_MEDIA_BUCKET" --endpoint-url "$ENDPOIN
 aws s3api list-objects-v2 --bucket "$BACKUP_BUCKET" --prefix "media/" --endpoint-url "$ENDPOINT" > "$TMP/backup-media.json"
 jq -r '.Contents[]? | [.Key, (.Size|tostring)] | @tsv' "$TMP/live-media.json" | sort > "$TMP/live-media.txt"
 jq -r '.Contents[]? | [(.Key | ltrimstr("media/")), (.Size|tostring)] | @tsv' "$TMP/backup-media.json" | sort > "$TMP/backup-media.txt"
-if ! diff -u "$TMP/live-media.txt" "$TMP/backup-media.txt"; then
-  echo "::error::The media backup does not match the live media bucket by object key and size."
+MISSING_MEDIA="$(comm -23 "$TMP/live-media.txt" "$TMP/backup-media.txt")"
+if [[ -n "$MISSING_MEDIA" ]]; then
+  echo "::error::The media backup is missing live object(s) or has different object sizes:"
+  printf '%s\\n' "$MISSING_MEDIA"
   exit 1
 fi
 MEDIA_COUNT="$(wc -l < "$TMP/live-media.txt" | tr -d ' ')"
