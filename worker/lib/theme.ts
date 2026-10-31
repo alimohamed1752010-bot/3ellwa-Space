@@ -32,7 +32,7 @@ export const themeTokensSchema = z.object({
     enabled:z.boolean(),intensity:z.enum(["subtle","balanced","expressive"]),
     duration:z.number().int().min(80).max(800),hoverEffects:z.boolean(),pageTransitions:z.boolean(),
   }).strict(),
-}).strict();
+}).strict().superRefine((v,ctx)=>{if((v.background.mode==="image"||v.background.mode==="video")&&!v.background.assetId)ctx.addIssue({code:z.ZodIssueCode.custom,path:["background","assetId"],message:"Choose a background file."});});
 export type ThemeTokens = z.infer<typeof themeTokensSchema>;
 
 export const DEFAULT_THEME_TOKENS:ThemeTokens={
