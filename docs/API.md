@@ -155,3 +155,16 @@ Admin (session required):
 Public:
 - GET /api/public/announcements -> { items } containing up to three currently active, visible announcements. Start/end windows are enforced server-side.
 - Active announcements render across public routes. Hidden, scheduled, and expired announcements are not exposed.
+
+
+## SEO and privacy controls (Part 8 checkpoint 3)
+
+Admin (session required):
+- GET /api/admin/seo-privacy -> { settings: { indexingEnabled, siteTitle, siteDescription } }.
+- PUT /api/admin/seo-privacy accepts the same settings object. Public indexing defaults to enabled; disabling it adds noindex directives and blocks crawling in robots.txt.
+
+Public:
+- /robots.txt reflects the site-wide indexing preference and advertises the sitemap when enabled.
+- /sitemap.xml lists the public homepage, links, projects, guestbook, published public custom pages with page-level indexing enabled, and visible projects.
+- Public pages receive server-rendered title, description, Open Graph metadata, and an X-Robots-Tag policy. The private admin route always receives noindex/nofollow regardless of the public indexing setting.
+- New custom pages default to indexable. Hidden or unpublished pages are not included.
