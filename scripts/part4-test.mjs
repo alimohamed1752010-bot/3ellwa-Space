@@ -225,8 +225,8 @@ projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...pr
 project = (await projectResponse.json()).item;
 publicProjects = await (await fetch(base + "/api/public/projects")).json();
 check("hidden project is omitted from public list", projectResponse.status === 200 && !publicProjects.items.some((x) => x.id === project.id));
-projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...projectBody, slug: pageItem?.slug ?? projectBody.slug, name: "Collision " + tag });
-check("project cannot take a page URL", projectResponse.status === 409, projectResponse.status);
+projectResponse = await call("POST", "/api/admin/projects", { ...projectBody, name: "Collision " + tag });
+check("duplicate project slug is refused", projectResponse.status === 409, projectResponse.status);
 projectResponse = await call("POST", `/api/admin/projects/${project.id}/duplicate`);
 const copiedProject = (await projectResponse.json()).item;
 check("duplicate project creates hidden copy", projectResponse.status === 201 && copiedProject?.visible === false && copiedProject?.name.includes("copy"));
