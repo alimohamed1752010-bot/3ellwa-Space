@@ -195,7 +195,8 @@ describe("Navigation screen", () => {
     await u.type(within(dialog).getByLabelText("Label"), "Blog");
     await u.type(within(dialog).getByLabelText("Target URL"), "/blog");
     await u.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(await screen.findByRole("button", { name: "Hide" })).toBeInTheDocument();
+    const blogRow = screen.getByText("Blog").closest("li")!;
+    expect(within(blogRow).getByRole("button", { name: "Hide" })).toBeInTheDocument();
     expect(calls.find((c) => c.method === "POST")!.body).toMatchObject({ label: "Blog", targetType: "url", url: "/blog", pageId: null, openNewTab: false, visible: true });
     await u.click(screen.getByRole("button", { name: "Hide Blog" }));
     expect(await screen.findByText("(hidden)")).toBeInTheDocument();
@@ -216,7 +217,7 @@ describe("Navigation screen", () => {
     await u.click(await screen.findByRole("button", { name: "Add item" }));
     const dialog = await screen.findByRole("dialog");
     await u.type(within(dialog).getByLabelText("Label"), "X");
-    await u.type(within(dialog).getByLabelText("Target"), "javascript:alert(1)");
+    await u.type(within(dialog).getByLabelText("Target URL"), "javascript:alert(1)");
     await u.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("must be a path");
   });
@@ -270,7 +271,7 @@ describe("Public homepage", () => {
     const blog = screen.getByRole("link", { name: "Blog" });
     expect(blog).toHaveAttribute("target", "_blank");
     expect(blog).toHaveAttribute("rel", expect.stringContaining("noopener"));
-    expect(document.title).toBe("3ellwa.space");
+    await waitFor(() => expect(document.title).toBe("3ellwa.space"));
   });
 
   it("shows an error with retry when the site cannot load", async () => {
