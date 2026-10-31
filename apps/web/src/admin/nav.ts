@@ -14,6 +14,7 @@ export const NAV: NavItem[] = [
   { to: "navigation", label: "Navigation", part: 2.5, blurb: "Choose and order the menu of your public site." },
   { to: "media", label: "Media Library", part: 4, blurb: "Upload and organize images, video, and icons." },
   { to: "analytics", label: "Analytics", part: 8, blurb: "Privacy-friendly traffic and link statistics." },
+  { to: "guestbook", label: "Guestbook", part: 8, blurb: "Review and moderate visitor messages." },
   { to: "domains", label: "Domains", part: 10, blurb: "Subdomains and DNS status." },
   { to: "seo-privacy", label: "SEO & Privacy", part: 8, blurb: "Indexing, metadata, robots, and privacy controls." },
   { to: "settings", label: "Settings", part: 8, blurb: "Site-wide settings and maintenance mode." },
