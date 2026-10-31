@@ -96,7 +96,7 @@ async function publicPageExists(env: Env, path: string): Promise<boolean> {
     const slug = path.replace(/^\/+/, "");
     if (!slug || slug.length > 120 || slug.includes("//")) return false;
     const row = await env.DB.prepare(
-      "SELECT 1 AS ok FROM pages WHERE slug = ? AND status = 'published' AND visibility IN ('public','password')"
+      "SELECT 1 AS ok FROM pages WHERE slug = ? AND status = 'published' AND visibility = 'public'"
     ).bind(slug).first();
     return row !== null;
   } catch {
