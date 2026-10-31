@@ -25,6 +25,7 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
   const [recordId, setRecordId] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [typedName, setTypedName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,6 +41,7 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
     setRecordId("");
     setPreview(null);
     setConfirmed(false);
+    setTypedName("");
     setError("");
   }, []);
 
@@ -50,6 +52,7 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
     setDraft({ name: record.name, type: record.type as Draft["type"], content: record.content, ttl: String(record.ttl), proxied: record.proxied, comment: record.comment ?? "" });
     setPreview(null);
     setConfirmed(false);
+    setTypedName("");
     setError("");
   }, [workerDomains, zoneName]);
 
@@ -67,6 +70,7 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
     setError("");
     setPreview(null);
     setConfirmed(false);
+    setTypedName("");
     const body = mode === "delete"
       ? { action: "delete", recordId }
       : mode === "edit"
@@ -74,16 +78,17 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
         : { action: "create", name: draft.name, type: draft.type, content: draft.content, ttl: Number(draft.ttl), proxied: draft.proxied, comment: draft.comment || null };
     try {
       setPreview(await api.post<Preview>("/api/admin/domains/records/preview", body));
+      setTypedName("");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not prepare the DNS preview.");
     }
   }, [draft, mode, recordId]);
 
   const apply = useCallback(async () => {
-    if (!preview || !confirmed) return;
+    if (!preview || !confirmed || typedName.trim().toLowerCase() !== preview.hostname) return;
     setBusy(true);
     setError("");
-    const proof = { confirmationToken: preview.confirmationToken, confirmName: preview.hostname, expiresAt: preview.expiresAt };
+    const proof = { confirmationToken: preview.confirmationToken, confirmName: typedName.trim(), expiresAt: preview.expiresAt };
     try {
       if (preview.action === "create") {
         await api.post("/api/admin/domains/records", { name: draft.name, type: draft.type, content: draft.content, ttl: Number(draft.ttl), proxied: draft.proxied, comment: draft.comment || null, ...proof });
@@ -144,10 +149,13 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
         <p className="text-xs text-muted">{preview.action === "create" ? "Create" : preview.action === "edit" ? "Update" : "Delete"} <strong className="text-ink">{preview.hostname}</strong>. Preview expires {new Date(preview.expiresAt).toLocaleTimeString()}.</p>
         {preview.before && <p className="break-all rounded-control bg-panel p-2 font-mono text-xs text-muted">Current: {preview.before.type} {preview.before.name} → {preview.before.content}</p>}
         {preview.after && <p className="break-all rounded-control bg-panel p-2 font-mono text-xs text-muted">Proposed: {preview.after.type} {preview.after.name} → {preview.after.content} · TTL {preview.after.ttl === 1 ? "Auto" : preview.after.ttl} · {preview.after.proxied ? "Proxied" : "DNS only"}</p>}
+        <label className="flex flex-col gap-1 text-xs text-muted">Type <strong className="break-all text-ink">{preview.hostname}</strong> to confirm this exact hostname
+          <input value={typedName} onChange={e => setTypedName(e.target.value)} autoComplete="off" spellCheck={false} placeholder={preview.hostname} className="w-full rounded-control border border-line bg-panel px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
+        </label>
         <label className="flex items-start gap-2 text-xs text-muted"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="mt-0.5" />I reviewed this exact change and confirm applying it to production DNS.</label>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant={preview.action === "delete" ? "danger" : "primary"} disabled={!confirmed || busy} loading={busy} onClick={() => void apply()}>{preview.action === "delete" ? "Confirm delete" : preview.action === "edit" ? "Confirm update" : "Confirm create"}</Button>
-          <Button size="sm" variant="secondary" onClick={() => { setPreview(null); setConfirmed(false); }}>Back</Button>
+          <Button size="sm" variant={preview.action === "delete" ? "danger" : "primary"} disabled={!confirmed || typedName.trim().toLowerCase() !== preview.hostname || busy} loading={busy} onClick={() => void apply()}>{preview.action === "delete" ? "Confirm delete" : preview.action === "edit" ? "Confirm update" : "Confirm create"}</Button>
+          <Button size="sm" variant="secondary" onClick={() => { setPreview(null); setConfirmed(false); setTypedName(""); }}>Back</Button>
         </div>
       </div>}
 
