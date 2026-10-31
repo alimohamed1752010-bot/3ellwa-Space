@@ -12,7 +12,16 @@ import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import { api } from "../shared/api";
 import type { PublicSite } from "./useSite";
 
-function AnalyticsTracker() {\n  const location=useLocation();\n  useEffect(()=>{\n    if(location.pathname.startsWith("/admin")||location.pathname.startsWith("/api/"))return;\n    fetch("/api/public/hit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({path:location.pathname}),keepalive:true,credentials:"same-origin"}).catch(()=>{});\n  },[location.pathname]);\n  return null;\n}\n\nfunction Orb() {
+function AnalyticsTracker() {
+  const location=useLocation();
+  useEffect(()=>{
+    if(location.pathname.startsWith("/admin")||location.pathname.startsWith("/api/"))return;
+    fetch("/api/public/hit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({path:location.pathname}),keepalive:true,credentials:"same-origin"}).catch(()=>{});
+  },[location.pathname]);
+  return null;
+}
+
+function Orb() {
   return (
     <div
       aria-hidden
