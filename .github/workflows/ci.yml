@@ -66,7 +66,7 @@ jobs:
 
       - name: Configure local-only test credentials
         run: |
-          printf 'ADMIN_PASSWORD=%s\\nDISCORD_AUTH_WEBHOOK_URL=%s\\n' "$ADMIN_PASSWORD" "$DISCORD_AUTH_WEBHOOK_URL" > .dev.vars
+          printf 'ADMIN_PASSWORD=%s\nDISCORD_AUTH_WEBHOOK_URL=%s\n' "$ADMIN_PASSWORD" "$DISCORD_AUTH_WEBHOOK_URL" > .dev.vars
 
       - name: Apply local D1 migrations
         run: npm run db:migrate:local
