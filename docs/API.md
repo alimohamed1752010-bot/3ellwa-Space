@@ -73,3 +73,17 @@ All admin routes. An asset is { id, filename, name, mimeType, sizeBytes, width, 
 - POST /api/admin/media/bulk { action: "move", ids (1-100), folderId|null } or { action: "delete", ids } -> { ok, count }.
 - GET /api/admin/media/folders -> { items: [{ id, name, createdAt, assetCount }] }. POST (201) / PUT /:id { name } / DELETE /:id all return { items }. 409 folder_exists on a duplicate name, 400 too_many_folders at 50.
 
+
+## Projects showcase (Part 4, checkpoint 3)
+Public:
+- GET /api/public/projects -> { items } ordered featured first, then saved order. Only visible, non-archived projects are returned.
+- GET /api/public/projects/:slug -> { item } with details, custom links, and gallery. Hidden, archived, or unknown projects return 404.
+- GET /projects and /projects/:slug -> public frontend shell routes.
+
+Admin (session required):
+- GET /api/admin/projects -> { items } including hidden projects.
+- POST /api/admin/projects -> 201 { item }; PUT /api/admin/projects/:id -> { item }. Both accept a full project: name, slug, description, logoAssetId, coverAssetId, websiteUrl, githubUrl, technologies, category, status (idea|active|paused|finished|archived), startedOn, featured, visible, links [{ label, url }], gallery [{ assetId, caption }].
+- POST /api/admin/projects/:id/duplicate -> 201 { item }. Copy is hidden and unfeatured.
+- PUT /api/admin/projects/order { ids } -> { items }.
+- DELETE /api/admin/projects/:id -> { ok }. Child links and gallery rows cascade.
+- Project slugs are unique across projects and custom pages; "projects" is reserved for the built-in directory. Images are referenced by media asset id, not URL.
