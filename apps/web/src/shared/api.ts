@@ -35,12 +35,22 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   } catch {
     throw new ApiError(0, "network", "Cannot reach the server. Check your connection.");
   }
-  const data = await res.json().catch(() => null);
+  const raw = await res.text();
+  let data: unknown = null;
+  try { data = raw ? JSON.parse(raw) : null; } catch { /* non-JSON response, handled below */ }
   if (!res.ok) {
     if (res.status === 401 && path.startsWith("/api/admin")) unauthorizedHandler?.();
     const e = (data as { error?: { code?: string; message?: string } & Record<string, unknown> } | null)?.error;
-    const { code, message, ...extra } = e ?? {};
-    throw new ApiError(res.status, code ?? "unknown", message ?? "Something went wrong.", extra);
+    if (!e) {
+      const type = res.headers.get("content-type")?.split(";")[0] ?? "unknown content";
+      throw new ApiError(res.status, "unexpected_response", `Server returned HTTP ${res.status} (${type}). The Worker may have crashed or returned an unexpected response.`);
+    }
+    const { code, message, ...extra } = e;
+    throw new ApiError(res.status, code ?? "unknown", message ?? `Request failed with HTTP ${res.status}.`, extra);
+  }
+  if (raw && data === null) {
+    const type = res.headers.get("content-type")?.split(";")[0] ?? "unknown content";
+    throw new ApiError(res.status, "invalid_response", `Server returned an unreadable response (${type}).`);
   }
   return data as T;
 }
