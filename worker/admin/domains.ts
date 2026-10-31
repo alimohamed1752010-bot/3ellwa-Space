@@ -34,6 +34,29 @@ async function cloudflareList<T>(token: string, path: string): Promise<T[]> {
 }
 
 
+domainRoutes.get("/domains/ns-check", async c => {
+  const zoneName = (c.env.CF_ZONE_NAME || "3ellwa.space").toLowerCase();
+  try {
+    const url = "https://cloudflare-dns.com/dns-query?name=" + encodeURIComponent(zoneName) + "&type=NS";
+    const response = await fetch(url, {
+      headers: { accept: "application/dns-json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error("The public DNS resolver returned HTTP " + response.status + ".");
+    const body = await response.json() as { Status?: number; Answer?: Array<{ type?: number; data?: string }> };
+    return c.json({
+      zone: zoneName,
+      resolver: "Cloudflare public DNS (1.1.1.1)",
+      status: typeof body.Status === "number" ? body.Status : -1,
+      nameServers: (body.Answer ?? []).filter(answer => answer.type === 2 && typeof answer.data === "string").map(answer => answer.data!.toLowerCase().replace(/\.$/, "")),
+      checkedAt: new Date().toISOString(),
+      limitation: "This shows the recursive resolver's NS answer. It is not a direct query to the registrar's parent-zone delegation.",
+    }, 200, { "Cache-Control": "no-store" });
+  } catch (error) {
+    return apiError(c, 502, "ns_check_failed", error instanceof Error ? error.message : "Could not query public nameserver records.");
+  }
+});
+
 domainRoutes.get("/domains/dns-check", async c => {
   const zoneName = (c.env.CF_ZONE_NAME || "3ellwa.space").toLowerCase();
   const hostname = (c.req.query("hostname") || "").trim().toLowerCase();
