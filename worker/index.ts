@@ -9,6 +9,7 @@ import { mediaAdminRoutes } from "./admin/media";
 import { linkRoutes } from "./admin/links";
 import { pageRoutes } from "./admin/pages";
 import { projectRoutes } from "./admin/projects";
+import { themeRoutes } from "./admin/themes";
 import { publicRoutes } from "./public/site";
 import { publicProjectRoutes } from "./public/projects";
 import { mediaPublicRoutes } from "./public/media";
@@ -45,6 +46,7 @@ app.route("/api/admin", mediaAdminRoutes);
 app.route("/api/admin", linkRoutes);
 app.route("/api/admin", pageRoutes);
 app.route("/api/admin", projectRoutes);
+app.route("/api/admin", themeRoutes);
 
 app.route("/api/public", publicRoutes);
 app.route("/api/public", publicProjectRoutes);
