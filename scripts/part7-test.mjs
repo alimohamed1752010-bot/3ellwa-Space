@@ -46,7 +46,11 @@ const publicAnnouncements=await call("GET","/api/public/announcements");const pu
 check("visible announcement is exposed publicly",publicAnnouncements.status===200&&publicAnnouncementData.items?.some(x=>x.id===announcementId),publicAnnouncements.status);
 if(announcementId){const hidden=await call("PUT",`/api/admin/announcements/${announcementId}`,{title:"Integration notice",body:"Public announcement test.",style:"info",visible:false,startsAt:null,endsAt:null});check("admin can hide an announcement",hidden.status===200,hidden.status);const publicHidden=await call("GET","/api/public/announcements");const hiddenData=await publicHidden.json();check("hidden announcement is not public",!hiddenData.items?.some(x=>x.id===announcementId));const removed=await call("DELETE",`/api/admin/announcements/${announcementId}`);check("admin can delete an announcement",removed.status===200,removed.status);}
 const seoInitial=await call("GET","/api/admin/seo-privacy");const seoInitialData=await seoInitial.json();
-check("SEO privacy defaults to public indexing enabled",seoInitial.status===200&&seoInitialData.settings?.indexingEnabled===true,seoInitial.status);
+check("SEO privacy defaults to indexing disabled",seoInitial.status===200&&seoInitialData.settings?.indexingEnabled===false,seoInitial.status);
+const robotsDefault=await fetch(base+"/robots.txt");const robotsDefaultText=await robotsDefault.text();
+check("robots.txt blocks crawling by default",robotsDefault.status===200&&robotsDefaultText.includes("Disallow: /")&&!robotsDefaultText.includes("Sitemap:"),robotsDefault.status);
+const sitemapDefault=await fetch(base+"/sitemap.xml");
+check("sitemap is unavailable by default",sitemapDefault.status===404,sitemapDefault.status);
 const seoEnabled=await call("PUT","/api/admin/seo-privacy",{indexingEnabled:true,siteTitle:"Integration test site",siteDescription:"SEO test description."});
 check("admin can enable search indexing and save metadata",seoEnabled.status===200,seoEnabled.status);
 const robotsEnabled=await fetch(base+"/robots.txt");const robotsText=await robotsEnabled.text();
