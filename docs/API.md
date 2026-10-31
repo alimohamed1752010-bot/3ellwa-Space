@@ -106,3 +106,17 @@ Public:
 - Public homepage layout sections of type widget use widgetId to render the selected widget.
 - Built-in widget rendering: text, clock, countdown, quote. Widget visibility on desktop/mobile is controlled by its homepage layout section and the widget's own visibility settings.
 - Third-party integrations, scheduled refresh, and credential storage are not part of checkpoint 1.
+
+
+## Integrations (Part 7 checkpoint 2)
+
+Admin (session required):
+- GET /api/admin/integrations -> { items } for configured integrations. Each item contains id, provider, enabled, config, status, lastCheckedAt, lastError and cacheUpdatedAt. No credentials are returned.
+- PUT /api/admin/integrations/github { enabled, config: { username } } -> { item }. Username is validated and must be a public GitHub account name.
+- PUT /api/admin/integrations/minecraft { enabled, config: { address } } -> { item }. Address accepts a hostname with optional port, not a URL.
+- POST /api/admin/integrations/:provider/test -> { ok, item, preview }. Server-side fetches use fixed provider endpoints and a timeout; successful responses are normalized and cached in config_json. Failures update status and lastError.
+- Supported providers currently: github, minecraft. No OAuth/private credentials are collected or stored in this checkpoint.
+
+Public:
+- GET /api/public/integrations/:provider/data -> { provider, data, updatedAt } only when the integration is enabled and has a successful cached result. Disabled, unconfigured, failed, or unknown integrations return 404.
+- Public snapshots contain only normalized profile or server-status fields. Provider settings and credentials are never included.
