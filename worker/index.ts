@@ -92,14 +92,15 @@ app.all("*", async (c) => {
   const url = new URL(req.url);
   const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : "/";
 
-  const seoSettings = await loadSeoSettings(env.DB);
   if (path === "/robots.txt") {
+    const seoSettings = await loadSeoSettings(env.DB);
     const body = seoSettings.indexingEnabled
       ? "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nSitemap: " + url.origin + "/sitemap.xml\n"
       : "User-agent: *\nDisallow: /\n";
     return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=300" } });
   }
   if (path === "/sitemap.xml") {
+    const seoSettings = await loadSeoSettings(env.DB);
     if (!seoSettings.indexingEnabled) return new Response("Not found", { status: 404, headers: { "x-robots-tag": "noindex", "cache-control": "no-store" } });
     const [pages, projects] = await Promise.all([
       env.DB.prepare("SELECT slug FROM pages WHERE status='published' AND visibility='public' AND indexable=1 ORDER BY slug").all<{slug:string}>(),
@@ -122,6 +123,7 @@ app.all("*", async (c) => {
   const status = isAdmin || isPublic ? 200 : 404;
 
   // 3. Serve the HTML shell. Wrong admin paths and unknown paths take the exact same branch (status 404).
+  const seoSettings = await loadSeoSettings(env.DB);
   const shell = await env.ASSETS.fetch(new Request(new URL("/index.html", url)));
   if (!shell.ok) return new Response("Frontend not built. Run: npm run build:web", { status: 500 });
   let pageTitle = seoSettings.siteTitle;
