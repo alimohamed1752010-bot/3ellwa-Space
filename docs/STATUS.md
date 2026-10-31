@@ -1,4 +1,8 @@
 # STATUS
+
+## Current authentication implementation (2026-10-31)
+The current Worker auth code uses a plain `ADMIN_PASSWORD` followed by mandatory Discord webhook OTP (`DISCORD_AUTH_WEBHOOK_URL`). It does not require `SESSION_SECRET`, `ADMIN_PASSWORD_HASH`, or `DISABLE_OTP`. Session and challenge digests use SHA-256; the existing D1 sessions/challenges/attempts tables remain in use. The local route test scripts now start a fake Discord webhook on 127.0.0.1:9999 and exercise the password + OTP flow. These source changes have been committed to GitHub; typecheck, local Worker tests, and live Cloudflare deployment have not yet been run for this auth revision.
+
 Update this file at the end of every part. It is the first thing a new chat reads after PROJECT.md.
 
 ## Done
