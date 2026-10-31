@@ -33,6 +33,47 @@ async function cloudflareList<T>(token: string, path: string): Promise<T[]> {
   throw new Error("Cloudflare returned more than 2,000 inventory entries; the result was stopped at the safety limit.");
 }
 
+
+domainRoutes.get("/domains/dns-check", async c => {
+  const zoneName = (c.env.CF_ZONE_NAME || "3ellwa.space").toLowerCase();
+  const hostname = (c.req.query("hostname") || "").trim().toLowerCase();
+  const validHostname = hostname.length <= 253
+    && hostname.length > zoneName.length
+    && hostname.endsWith("." + zoneName)
+    && hostname.split(".").every(label => label.length > 0 && label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label));
+  if (!validHostname) {
+    return apiError(c, 400, "invalid_hostname", "Enter a subdomain inside " + zoneName + ". The zone apex and external hostnames are not accepted.");
+  }
+
+  try {
+    const types = ["A", "AAAA", "CNAME"] as const;
+    const results = await Promise.all(types.map(async type => {
+      const url = "https://cloudflare-dns.com/dns-query?name=" + encodeURIComponent(hostname) + "&type=" + type;
+      const response = await fetch(url, {
+        headers: { accept: "application/dns-json" },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error("The public DNS resolver returned HTTP " + response.status + ".");
+      const body = await response.json() as { Status?: number; Answer?: Array<{ type?: number; data?: string; TTL?: number }> };
+      const typeCode = type === "A" ? 1 : type === "CNAME" ? 5 : 28;
+      return {
+        type,
+        status: typeof body.Status === "number" ? body.Status : -1,
+        answers: (body.Answer ?? []).filter(answer => answer.type === typeCode && typeof answer.data === "string").map(answer => answer.data!),
+      };
+    }));
+    return c.json({
+      hostname,
+      resolver: "Cloudflare public DNS (1.1.1.1)",
+      records: results,
+      hasAddress: results.some(result => (result.type === "A" || result.type === "AAAA") && result.answers.length > 0),
+      checkedAt: new Date().toISOString(),
+    }, 200, { "Cache-Control": "no-store" });
+  } catch (error) {
+    return apiError(c, 502, "dns_check_failed", error instanceof Error ? error.message : "Could not query public DNS.");
+  }
+});
+
 domainRoutes.get("/domains", async c => {
   const token = c.env.CF_API_TOKEN;
   const accountId = c.env.CF_ACCOUNT_ID;
