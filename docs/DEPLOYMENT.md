@@ -65,15 +65,15 @@ Requirements: Git, Node.js 22, npm, and a Cloudflare account with access to this
 
 7. Push changes to `main`. GitHub Actions must pass. Cloudflare Workers Builds then builds and deploys application changes. Do not manually deploy a stale local checkout over a newer GitHub build.
 
-## Manual deployment fallback
+## GitHub Actions manual deployment fallback
 
-If the GitHub-to-Cloudflare build connection is unavailable, first pull the latest `main`, install dependencies with `npm ci`, run the checks above, then deploy:
+The repository also includes **Actions → Deploy 3ellwa.space**, a manual-only fallback. It does not run on every push and does not replace the normal Cloudflare Workers Builds connection. It installs locked dependencies, runs typecheck and web tests, builds the static assets, then deploys the checked-out branch with Wrangler.
 
-```sh
-npm run deploy
-```
+Before using it, add a GitHub Actions repository secret named `CF_API_TOKEN` with Cloudflare Workers Scripts: Edit permission and the read permissions Wrangler needs to resolve the configured D1 and R2 bindings. Do not reuse a broad Global API Key. The workflow uses the account ID already present in `wrangler.jsonc`; it does not need a second account-ID secret.
 
-Confirm the latest Worker deployment in Cloudflare and verify it receives 100% traffic before considering the deployment complete.
+Run it only after confirming the selected branch is the intended production revision. Confirm the latest Worker deployment in Cloudflare and verify it receives 100% traffic before considering the deployment complete. If the secret is absent, the workflow intentionally stops before deploying.
+
+For local manual fallback, first pull the latest `main`, install dependencies with `npm ci`, run the checks above, then deploy with `npm run deploy`.
 
 ## Local development
 
