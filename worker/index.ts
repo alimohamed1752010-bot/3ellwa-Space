@@ -13,7 +13,7 @@ import { themeRoutes } from "./admin/themes";
 import { layoutRoutes } from "./admin/layout";
 import { publishRoutes } from "./admin/publish";
 import { widgetRoutes } from "./admin/widgets";
-import { integrationRoutes } from "./admin/integrations";
+import { integrationRoutes, refreshEnabledIntegrations } from "./admin/integrations";
 import { publicRoutes } from "./public/site";
 import { publicProjectRoutes } from "./public/projects";
 import { publicWidgetRoutes } from "./public/widgets";
@@ -133,4 +133,10 @@ function escapeAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(controller: ScheduledController, env: Env) {
+    const result = await refreshEnabledIntegrations(env.DB, controller.scheduledTime);
+    console.log(JSON.stringify({ event: "integration_refresh_complete", cron: controller.cron, ...result }));
+  },
+} satisfies ExportedHandler<Env>;
