@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import { Button, Card } from "../shared/ui";
 import LinksPage, { LinksSection } from "./LinksPage";
 import PublicPage from "../PublicPage";
@@ -12,7 +12,7 @@ import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import { api } from "../shared/api";
 import type { PublicSite } from "./useSite";
 
-function Orb() {
+function AnalyticsTracker() {\n  const location=useLocation();\n  useEffect(()=>{\n    if(location.pathname.startsWith("/admin")||location.pathname.startsWith("/api/"))return;\n    fetch("/api/public/hit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({path:location.pathname}),keepalive:true,credentials:"same-origin"}).catch(()=>{});\n  },[location.pathname]);\n  return null;\n}\n\nfunction Orb() {
   return (
     <div
       aria-hidden
