@@ -6,7 +6,7 @@ Last reconciled: 2026-10-31
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
 - Latest source changes include domain inventory improvements, SEO privacy hardening, and a manual GitHub Actions deployment fallback (`.github/workflows/deploy.yml`). The crawler-visible noindex follow-up (`6d1dc3b`) is deployed in Worker version 172.
-- Latest verified feature CI run [41229912811](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41229912811) completed successfully on commit `dd854d364e8100b9d3e35d8a0cf6f07e1abdb877`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed. The new DNS audit authentication/read checks passed, and the CI run uploaded a source ZIP artifact.
+- Latest verified feature CI run [41230265602](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41230265602) completed successfully on commit `d64241652bb7ca0e0d484e66c2af52892dde9cd4`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed. The new DNS audit authentication/read checks passed, and the CI run uploaded a source ZIP artifact.
 - Cloudflare Worker: `3ellwa-space`; latest inspected deployment `1321df95-00dc-44a3-b37a-94ee18ff193a`, version `90b1fa18-9a63-4e5b-8a1f-b34e7fca140a` (version 191), assigned 100% traffic at 18:31 UTC on 2026-10-31. Deployment metadata confirms traffic assignment; it is not a live public HTTP check.
 - Cron Trigger: `0 * * * *` (hourly UTC).
 - Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so domain inventory and DNS management remain unavailable until the owner configures it. The token needs Zone Read, DNS Read, and DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the account. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
@@ -36,7 +36,7 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
-- CI run [41229912811](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41229912811) passed both jobs on `dd854d364e8100b9d3e35d8a0cf6f07e1abdb877`: typecheck, web tests, production build, local D1 migrations, Worker integration suite, and source artifact upload. The integration suite confirms `/api/admin/domains/audit` requires authentication and returns a bounded list after migration.
+- CI run [41230265602](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41230265602) passed both jobs on `d64241652bb7ca0e0d484e66c2af52892dde9cd4`: typecheck, web tests, production build, local D1 migrations, Worker integration suite, and source artifact upload. The integration suite confirms `/api/admin/domains/audit` requires authentication and returns a bounded list after migration.
 - Production D1 migration `0004_dns_change_audit.sql` was applied at 18:35 UTC and verified: `d1_migrations` reports it as migration id 4 and `sqlite_master` confirms `dns_change_audit` exists. This is an additive schema change; no existing records were modified.
 - Cloudflare Worker version 191 (`90b1fa18-9a63-4e5b-8a1f-b34e7fca140a`) is assigned 100% traffic in deployment `1321df95-00dc-44a3-b37a-94ee18ff193a`. This is deployment metadata, not an authenticated live HTTP check.
 
