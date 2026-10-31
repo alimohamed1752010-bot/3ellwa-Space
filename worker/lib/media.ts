@@ -53,3 +53,13 @@ export function newTag(): string {
   crypto.getRandomValues(b);
   return "~" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 }
+
+export const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+export type VideoMime = "video/mp4" | "video/webm";
+
+/** Accept only common browser-playable video containers, detected from their bytes. */
+export function sniffVideo(b: Uint8Array): VideoMime | null {
+  if (b.length >= 12 && b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) return "video/mp4";
+  if (b.length >= 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3) return "video/webm";
+  return null;
+}
