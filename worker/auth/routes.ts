@@ -74,8 +74,9 @@ authRoutes.post("/password", async (c) => {
   const body = z.object({ password: z.string().min(1).max(1024) }).safeParse(await c.req.json().catch(() => null));
   if (!body.success) return apiError(c, 400, "bad_request", "Password required.");
 
-  stage = "check_rate_limit";
+  stage = "hash_client_ip";
   const ip = await ipHash(c);
+  stage = "query_rate_limit";
   const wait = await lockedFor(c, ip, "password");
   if (wait) return lockedResponse(c, wait);
   stage = "cleanup_auth_records";
