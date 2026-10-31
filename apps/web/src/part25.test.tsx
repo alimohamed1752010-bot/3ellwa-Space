@@ -203,7 +203,8 @@ describe("Navigation screen", () => {
     expect(calls.find((c) => c.path === "/api/admin/navigation/n2")!.body).toMatchObject({ visible: false, label: "Blog" });
     await u.click(screen.getByRole("button", { name: "Move Blog up" }));
     await waitFor(() => expect(calls.find((c) => c.path.endsWith("/order"))!.body).toEqual({ ids: ["n2", "n1"] }));
-    await u.click(screen.getByRole("button", { name: "Delete Links" }));
+    const linksRow = screen.getByText("Links").closest("li")!;
+    await u.click(within(linksRow).getByRole("button", { name: "Delete" }));
     dialog = await screen.findByRole("dialog");
     await u.click(within(dialog).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(screen.queryByText("Links")).toBeNull());
