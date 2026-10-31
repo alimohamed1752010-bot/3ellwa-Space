@@ -50,6 +50,10 @@ const badGithub=await call("PUT","/api/admin/integrations/github",{enabled:true,
 check("reject invalid GitHub username",badGithub.status===400,badGithub.status);
 const badMinecraft=await call("PUT","/api/admin/integrations/minecraft",{enabled:true,config:{address:"https://example.com"}});
 check("reject URL as Minecraft server address",badMinecraft.status===400,badMinecraft.status);
+let scheduled=await fetch(base+"/cdn-cgi/local/scheduled?format=json&cron=0+*+*+*+*");
+if(scheduled.status===404)scheduled=await fetch(base+"/cdn-cgi/handler/scheduled?format=json&cron=0+*+*+*+*");
+let scheduledResult=null;try{scheduledResult=await scheduled.json();}catch{}
+check("scheduled refresh handler runs with no enabled providers",scheduled.status===200&&scheduledResult?.outcome==="ok",scheduled.status);
 await call("POST","/api/auth/logout",{});
 discord.close();
 console.log(failed===0?"\nAll Part 7 checks passed.":`\n${failed} Part 7 check(s) FAILED.`);
