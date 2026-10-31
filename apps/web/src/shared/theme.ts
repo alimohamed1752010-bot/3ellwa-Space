@@ -1,6 +1,6 @@
 export interface ThemeTokens {
   colors:{bg:string;surface:string;raised:string;line:string;lineStrong:string;ink:string;muted:string;accent:string;accentStrong:string;accentSoft:string;danger:string;ok:string};
-  background:{mode:"solid"|"gradient"|"image"|"video";color:string;gradientStart:string;gradientEnd:string;gradientAngle:number;assetUrl?:string|null;overlay:number;position:"center"|"top"|"bottom"};
+  background:{mode:"solid"|"gradient"|"image"|"video";color:string;gradientStart:string;gradientEnd:string;gradientAngle:number;assetId?:string|null;assetUrl?:string|null;overlay:number;position:"center"|"top"|"bottom"};
   cards:{background:string;border:string;radius:number;shadow:"none"|"soft"|"strong";blur:number};
   typography:{family:"system"|"serif"|"mono";monoFamily:"system"|"mono";baseSize:number;headingScale:number;fontWeight:number;lineHeight:number};
   layout:{containerWidth:number;density:"compact"|"comfortable"|"spacious";spacing:number};
