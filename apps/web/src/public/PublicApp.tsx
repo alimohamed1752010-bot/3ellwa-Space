@@ -11,6 +11,7 @@ import { useLinks } from "./useLinks";
 import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import { api } from "../shared/api";
 import type { PublicSite } from "./useSite";
+import GuestbookPage from "./GuestbookPage";
 
 function AnalyticsTracker() {
   const location=useLocation();
@@ -194,12 +195,14 @@ function NotFound() {
 export default function PublicApp() {
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
       <PublicSiteProvider>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/links" element={<LinksPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:slug" element={<ProjectsPage />} />
+        <Route path="/guestbook" element={<GuestbookPage />} />
         <Route path="/:slug" element={<PublicPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
