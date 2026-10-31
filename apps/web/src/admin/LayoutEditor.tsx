@@ -50,7 +50,8 @@ export default function LayoutEditor(){
  const [draft,setDraft]=useState<LayoutData|null>(null);
  const [history,setHistory]=useState<LayoutData[]>([]);
  const [cursor,setCursor]=useState(0);
- const [historyItems,setHistoryItems]=useState<HistoryItem[]>([]);\n const [widgets,setWidgets]=useState<WidgetOption[]>([]);
+ const [historyItems,setHistoryItems]=useState<HistoryItem[]>([]);
+ const [widgets,setWidgets]=useState<WidgetOption[]>([]);
  const [snapshot,setSnapshot]=useState<unknown|null>(null);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
