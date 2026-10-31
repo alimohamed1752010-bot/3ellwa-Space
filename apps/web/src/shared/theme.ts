@@ -29,7 +29,9 @@ export function applyThemeTokens(tokens:ThemeTokens){
   "--3w-font-size":tokens.typography.baseSize+"px","--3w-line-height":String(tokens.typography.lineHeight),
   "--3w-container-width":tokens.layout.containerWidth+"px","--3w-spacing":tokens.layout.spacing+"px",
   "--3w-motion-duration":tokens.animation.duration+"ms",
-  "--3w-motion-scale":tokens.animation.intensity==="subtle"?"1":tokens.animation.intensity==="balanced"?"1.35":"1.7",
+  "--3w-hover-duration":Math.round(tokens.animation.duration*.9)+"ms",
+  "--3w-lift-distance":tokens.animation.intensity==="subtle"?"-2px":tokens.animation.intensity==="balanced"?"-3px":"-5px",
+  "--3w-hover-scale":tokens.animation.intensity==="subtle"?"1.01":tokens.animation.intensity==="balanced"?"1.02":"1.03",
   "--3w-bg-position":tokens.background.position,
   "--3w-bg-overlay":String(tokens.background.overlay/100),
  };
