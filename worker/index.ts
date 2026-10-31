@@ -7,6 +7,7 @@ import { profileRoutes } from "./admin/profile";
 import { navigationRoutes } from "./admin/navigation";
 import { mediaAdminRoutes } from "./admin/media";
 import { linkRoutes } from "./admin/links";
+import { pageRoutes } from "./admin/pages";
 import { publicRoutes } from "./public/site";
 import { mediaPublicRoutes } from "./public/media";
 import { goRoutes, publicLinkRoutes } from "./public/links";
@@ -40,6 +41,7 @@ app.route("/api/admin", profileRoutes);
 app.route("/api/admin", navigationRoutes);
 app.route("/api/admin", mediaAdminRoutes);
 app.route("/api/admin", linkRoutes);
+app.route("/api/admin", pageRoutes);
 
 app.route("/api/public", publicRoutes);
 app.route("/api/public", publicLinkRoutes);
