@@ -58,7 +58,7 @@ themeRoutes.put("/themes/:id/name",async c=>{
  if(!row)return apiError(c,404,"not_found","Theme not found.");
  if(row.is_preset)return apiError(c,403,"preset_locked","Built-in presets cannot be renamed. Duplicate one to customize it.");
  await c.env.DB.prepare("UPDATE themes SET name=?,updated_at=datetime('now') WHERE id=?").bind(p.data.name,id).run();
- return c.json({item:rowOut((await getTheme(c.env.DB,id))!)});
+ return c.json({item:await rowOut(c.env.DB,(await getTheme(c.env.DB,id))!)});
 });
 themeRoutes.put("/themes/:id/draft",async c=>{
  const p=await parseBody(c,z.object({tokens:themeTokensSchema}));if("res"in p)return p.res;
@@ -67,14 +67,14 @@ themeRoutes.put("/themes/:id/draft",async c=>{
  if(row.is_preset)return apiError(c,403,"preset_locked","Built-in presets cannot be edited. Duplicate one to customize it.");
  const bad=await validateBackgroundAsset(c.env.DB,p.data.tokens);if(bad)return apiError(c,400,"invalid_background",bad);
  await c.env.DB.prepare("UPDATE themes SET draft_tokens_json=?,updated_at=datetime('now') WHERE id=?").bind(JSON.stringify(p.data.tokens),id).run();
- return c.json({item:rowOut((await getTheme(c.env.DB,id))!)});
+ return c.json({item:await rowOut(c.env.DB,(await getTheme(c.env.DB,id))!)});
 });
 themeRoutes.post("/themes/:id/reset",async c=>{
  const id=c.req.param("id"),row=await getTheme(c.env.DB,id);
  if(!row)return apiError(c,404,"not_found","Theme not found.");
  if(row.is_preset)return apiError(c,403,"preset_locked","Built-in presets cannot be edited.");
  await c.env.DB.prepare("UPDATE themes SET draft_tokens_json=tokens_json,updated_at=datetime('now') WHERE id=?").bind(id).run();
- return c.json({item:rowOut((await getTheme(c.env.DB,id))!)});
+ return c.json({item:await rowOut(c.env.DB,(await getTheme(c.env.DB,id))!)});
 });
 themeRoutes.post("/themes/:id/publish",async c=>{
  const id=c.req.param("id"),row=await getTheme(c.env.DB,id);
@@ -84,7 +84,7 @@ themeRoutes.post("/themes/:id/publish",async c=>{
  const tokens=parseThemeTokens(row.draft_tokens_json),bad=await validateBackgroundAsset(c.env.DB,tokens);
  if(bad)return apiError(c,400,"invalid_background",bad);
  await c.env.DB.prepare("UPDATE themes SET tokens_json=draft_tokens_json,draft_tokens_json=NULL,version=version+1,updated_at=datetime('now') WHERE id=?").bind(id).run();
- return c.json({item:rowOut((await getTheme(c.env.DB,id))!)});
+ return c.json({item:await rowOut(c.env.DB,(await getTheme(c.env.DB,id))!)});
 });
 themeRoutes.post("/themes/:id/activate",async c=>{
  const id=c.req.param("id"),row=await getTheme(c.env.DB,id);
@@ -95,7 +95,7 @@ themeRoutes.post("/themes/:id/activate",async c=>{
   c.env.DB.prepare("UPDATE themes SET is_active=0 WHERE is_active=1"),
   c.env.DB.prepare("UPDATE themes SET is_active=1,updated_at=datetime('now') WHERE id=?").bind(id),
  ]);
- return c.json({item:rowOut((await getTheme(c.env.DB,id))!)});
+ return c.json({item:await rowOut(c.env.DB,(await getTheme(c.env.DB,id))!)});
 });
 themeRoutes.post("/themes/:id/duplicate",async c=>{
  const id=c.req.param("id"),row=await getTheme(c.env.DB,id);
