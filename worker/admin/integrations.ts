@@ -35,6 +35,27 @@ async function fetchProvider(provider:"github"|"minecraft",settings:Record<strin
  }catch(e){if(e instanceof Error&&e.name==="AbortError")throw new Error("The provider timed out.");throw e;}
  finally{clearTimeout(timer);}
 }
+export async function refreshEnabledIntegrations(db:D1Database,scheduledTime:number){
+ const rows=await db.prepare("SELECT * FROM integrations WHERE enabled=1 ORDER BY provider").all<Row>();
+ const checkedAt=new Date(scheduledTime).toISOString();
+ let refreshed=0,failed=0;
+ for(const row of rows.results){
+  const stored=parseStored(row.config_json);
+  try{
+   const result=await fetchProvider(row.provider as "github"|"minecraft",stored.settings);
+   const next={...stored,cache:result.data,cacheUpdatedAt:checkedAt};
+   await db.prepare("UPDATE integrations SET config_json=?,status='ok',last_checked_at=?,last_error=NULL,updated_at=datetime('now') WHERE id=?").bind(JSON.stringify(next),checkedAt,row.id).run();
+   refreshed++;
+  }catch(e){
+   const message=e instanceof Error?e.message:"Provider refresh failed.";
+   // Keep the last successful snapshot public during transient outages.
+   await db.prepare("UPDATE integrations SET status=?,last_checked_at=?,last_error=?,updated_at=datetime('now') WHERE id=?").bind(stored.cache?"ok":"error",checkedAt,message,row.id).run();
+   console.error(JSON.stringify({event:"integration_refresh_failed",provider:row.provider,message}));
+   failed++;
+  }
+ }
+ return {checked:rows.results.length,refreshed,failed,scheduledAt:checkedAt};
+}
 integrationRoutes.get("/integrations",async c=>{
  const rows=await c.env.DB.prepare("SELECT * FROM integrations ORDER BY provider").all<Row>();
  return c.json({items:rows.results.map(output)});
@@ -70,7 +91,7 @@ integrationRoutes.post("/integrations/:provider/test",async c=>{
   return c.json({ok:true,item:fresh?output(fresh):null,preview:result.data});
  }catch(e){
   const message=e instanceof Error?e.message:"Provider check failed.";
-  await c.env.DB.prepare("UPDATE integrations SET status='error',last_checked_at=datetime('now'),last_error=?,updated_at=datetime('now') WHERE id=?").bind(message,row.id).run();
+  await c.env.DB.prepare("UPDATE integrations SET status=?,last_checked_at=datetime('now'),last_error=?,updated_at=datetime('now') WHERE id=?").bind(stored.cache?"ok":"error",message,row.id).run();
   return apiError(c,502,"provider_unavailable",message);
  }
 });
