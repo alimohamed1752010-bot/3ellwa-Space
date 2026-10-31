@@ -44,12 +44,19 @@ async function withMediaUrls(db:D1Database,layout:HomeLayout) {
   return {sections};
 }
 async function read(db: D1Database) {
-  const row = await db.prepare("SELECT draft_json,published_json,version FROM site_settings WHERE key='homepage_layout'").first<{draft_json:string|null;published_json:string|null;version:number}>();
+  const [row,themeCount,pageCount] = await Promise.all([
+    db.prepare("SELECT draft_json,published_json,version FROM site_settings WHERE key='homepage_layout'").first<{draft_json:string|null;published_json:string|null;version:number}>(),
+    db.prepare("SELECT COUNT(*) AS count FROM themes WHERE draft_tokens_json IS NOT NULL").first<{count:number}>(),
+    db.prepare("SELECT COUNT(*) AS count FROM pages WHERE status='draft' OR (draft_layout_json IS NOT NULL AND draft_layout_json != layout_json)").first<{count:number}>(),
+  ]);
+  const layoutDraft=!!row?.draft_json&&row.draft_json!==row.published_json;
+  const pending={layout:layoutDraft,themes:themeCount?.count??0,pages:pageCount?.count??0};
   return {
     draft: await withMediaUrls(db,parseLayout(row?.draft_json ?? row?.published_json)),
     published: await withMediaUrls(db,parseLayout(row?.published_json)),
     version: row?.version ?? 0,
-    hasDraft: !!row?.draft_json && row.draft_json !== row.published_json,
+    pending,
+    hasDraft: layoutDraft||pending.themes>0||pending.pages>0,
   };
 }
 
