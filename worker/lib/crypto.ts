@@ -18,6 +18,11 @@ export function randomId(bytes = 16): string {
   return b64urlEncode(crypto.getRandomValues(new Uint8Array(bytes)));
 }
 
+/** SHA-256 digest for random session tokens and short-lived challenge values. */
+export async function sha256Hex(message: string): Promise<string> {
+  return hex(await crypto.subtle.digest("SHA-256", enc.encode(message)));
+}
+
 /** HMAC-SHA256 keyed with a secret. Used so stored hashes are useless without SESSION_SECRET. */
 export async function hmacHex(secret: string, message: string): Promise<string> {
   const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
