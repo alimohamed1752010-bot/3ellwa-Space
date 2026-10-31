@@ -6,6 +6,7 @@ export const NAV: NavItem[] = [
   { to: "profile", label: "Profile", part: 2.5, blurb: "Avatar, banner, name, bio, status, and social links." },
   { to: "links", label: "Links", part: 3, blurb: "Create, order, schedule, and track your links." },
   { to: "pages", label: "Pages", part: 4, blurb: "Create pages and edit them with the block editor." },
+  { to: "layout", label: "Layout", part: 6, blurb: "Arrange homepage sections, preview devices, and publish drafts." },
   { to: "widgets", label: "Widgets", part: 7, blurb: "Turn widgets on and off and configure them." },
   { to: "projects", label: "Projects", part: 4, blurb: "Manage the projects shown on your site." },
   { to: "integrations", label: "Integrations", part: 7, blurb: "Connect Spotify, Discord, Steam, GitHub, and more." },
