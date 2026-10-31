@@ -36,7 +36,7 @@ export default function Login({ onAuthed }: { onAuthed: () => void }) {
       setError(e.message);
       return e;
     }
-    setError("Something went wrong. Try again.");
+    setError(e instanceof Error && e.message ? e.message : "Something went wrong. Try again.");
     return null;
   }
 
@@ -47,7 +47,7 @@ export default function Login({ onAuthed }: { onAuthed: () => void }) {
     setError(null);
     try {
       const res = await api.post<{ challengeId: string }>("/api/auth/password", { password });
-      if (!res.challengeId) throw new Error("The server did not create a login challenge.");
+      if (!res.challengeId) throw new Error("The server returned a successful response without a login challenge. The deployed Worker and login page may be out of sync. Reload once; if this persists, the password endpoint response needs inspection.");
       setPassword("");
       setChallengeId(res.challengeId);
       setCode("");
