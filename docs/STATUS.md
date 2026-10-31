@@ -34,7 +34,7 @@ Last reconciled: 2026-10-31
 - CI run [41221123237](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41221123237) passed both jobs on the latest checked `main` commit at reconciliation, including local Worker integration tests.
 - Cloudflare API inspection confirmed the Worker, hourly schedule, D1/R2 bindings, and the separate backup bucket.
 - Cloudflare API inspection confirmed no backup objects currently exist under `d1/` or `media/`.
-- Cloudflare API inspection confirms version 172 (`7bd78949-6d07-49c8-9112-18ffadeae561`) is assigned 100% traffic. It predates the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
+- Cloudflare API inspection confirms version 172 (`7bd78949-6d07-49c8-9112-18ffadeae561`) is assigned 100% traffic and was built from commit `6d1dc3b`, which contains the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
 
 ## Remaining acceptance work
 
