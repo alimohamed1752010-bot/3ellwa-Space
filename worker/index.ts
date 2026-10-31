@@ -13,9 +13,11 @@ import { themeRoutes } from "./admin/themes";
 import { layoutRoutes } from "./admin/layout";
 import { publishRoutes } from "./admin/publish";
 import { widgetRoutes } from "./admin/widgets";
+import { integrationRoutes } from "./admin/integrations";
 import { publicRoutes } from "./public/site";
 import { publicProjectRoutes } from "./public/projects";
 import { publicWidgetRoutes } from "./public/widgets";
+import { publicIntegrationRoutes } from "./public/integrations";
 import { mediaPublicRoutes } from "./public/media";
 import { goRoutes, publicLinkRoutes } from "./public/links";
 
@@ -54,10 +56,12 @@ app.route("/api/admin", themeRoutes);
 app.route("/api/admin", layoutRoutes);
 app.route("/api/admin", publishRoutes);
 app.route("/api/admin", widgetRoutes);
+app.route("/api/admin", integrationRoutes);
 
 app.route("/api/public", publicRoutes);
 app.route("/api/public", publicProjectRoutes);
 app.route("/api/public", publicWidgetRoutes);
+app.route("/api/public", publicIntegrationRoutes);
 app.route("/api/public", publicLinkRoutes);
 app.route("/go", goRoutes);
 app.route("/media", mediaPublicRoutes);
