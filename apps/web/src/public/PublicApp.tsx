@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { Button, Card } from "../shared/ui";
 import LinksPage, { LinksSection } from "./LinksPage";
+import PublicPage from "../PublicPage";
 import LocalTime from "./LocalTime";
 import TypingSubtitle from "./TypingSubtitle";
 import { useLinks } from "./useLinks";
@@ -168,6 +169,7 @@ export default function PublicApp() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/links" element={<LinksPage />} />
+        <Route path="/:slug" element={<PublicPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
