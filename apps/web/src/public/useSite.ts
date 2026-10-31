@@ -16,6 +16,7 @@ export interface PublicSite {
   navigation: Array<{ id: string; label: string; href: string; newTab: boolean }>;
   site: { title: string };
   theme: PublicTheme;
+  layout: { sections: Array<{id:string;type:"profile"|"links"|"projects"|"text"|"gallery"|"widget"|"spacer";title:string;body:string;assetId:string|null;widgetId:string|null;enabled:boolean;visibleDesktop:boolean;visibleMobile:boolean;imageUrl:string|null}> };
 }
 
 export function useSite() {
@@ -31,7 +32,8 @@ export function useSite() {
 /** True when nothing worth showing has been configured yet. */
 export function isEmptySite(s: PublicSite): boolean {
   const p = s.profile;
-  return !(p.displayName || p.username || p.shortBio || p.extendedBio || p.statusText || p.avatarUrl || p.bannerUrl || p.subtitles.length || p.badges.length || s.social.length || s.navigation.length);
+  const customSections=s.layout?.sections?.some(x=>x.enabled&&x.type!=="profile"&&x.type!=="links"&&x.type!=="spacer");
+  return !(customSections || p.displayName || p.username || p.shortBio || p.extendedBio || p.statusText || p.avatarUrl || p.bannerUrl || p.subtitles.length || p.badges.length || s.social.length || s.navigation.length);
 }
 
 type SiteState=ReturnType<typeof useSite>;
