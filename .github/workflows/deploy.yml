@@ -1,0 +1,46 @@
+name: Deploy 3ellwa.space
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-worker-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Verify and deploy production Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: a287b5112e47d5501d7eb24d0a8adf7e
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Validate deployment credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+            echo "::error::Missing repository secret CF_API_TOKEN."
+            exit 1
+          fi
+      - name: Typecheck Worker and web app
+        run: npm run typecheck
+      - name: Run web tests
+        run: npm run test:web
+      - name: Build production web assets
+        run: npm run build:web
+      - name: Deploy Worker and static assets
+        run: npx wrangler deploy
