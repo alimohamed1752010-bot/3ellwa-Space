@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
-import { hmacHex } from "../lib/crypto";
+import { sha256Hex } from "../lib/crypto";
 import { LIVE_SQL, browserOf, deviceOf, isSafeDestination } from "../lib/links";
 import { mediaUrl } from "../lib/media";
 
@@ -72,7 +72,7 @@ goRoutes.on(["GET", "HEAD"], "/:linkId", async (c) => {
     } catch { /* no referrer */ }
     const record = (async () => {
       const day = new Date().toISOString().slice(0, 10);
-      const visitor = (await hmacHex(c.env.SESSION_SECRET, `${c.req.header("cf-connecting-ip") ?? ""}|${ua}|${day}`)).slice(0, 32);
+      const visitor = (await sha256Hex(`${c.req.header("cf-connecting-ip") ?? ""}|${ua}|${day}`)).slice(0, 32);
       await c.env.DB.prepare("INSERT INTO analytics_events (type, path, link_id, referrer_host, device, browser, visitor_hash) VALUES ('link_click', ?, ?, ?, ?, ?, ?)")
         .bind(`/go/${id}`, id, ref, deviceOf(ua), browserOf(ua), visitor).run();
     })().catch(() => { /* a failed count must never block the redirect */ });
