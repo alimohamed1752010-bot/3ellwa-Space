@@ -56,3 +56,26 @@ publicRoutes.get("/site", async (c) => {
     site: { title: profile?.display_name || "3ellwa.space" },
   });
 });
+
+interface PublicPageRow { id:string; slug:string; title:string; meta_title:string|null; meta_description:string|null; indexable:number }
+interface PublicSectionRow { id:string; type:string; sort_order:number; published_json:string|null }
+publicRoutes.get("/pages/:slug", async (c) => {
+  const slug = c.req.param("slug");
+  if (slug.length > 80 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return c.json({ error: { code: "not_found", message: "Page not found." } }, 404);
+  const page = await c.env.DB.prepare("SELECT id,slug,title,meta_title,meta_description,indexable FROM pages WHERE slug=? AND status='published' AND visibility='public'").bind(slug).first<PublicPageRow>();
+  if (!page) return c.json({ error: { code: "not_found", message: "Page not found." } }, 404);
+  const rows = (await c.env.DB.prepare("SELECT id,type,sort_order,published_json FROM page_sections WHERE page_id=? AND published_json IS NOT NULL ORDER BY sort_order,rowid").bind(page.id).all<PublicSectionRow>()).results;
+  const sections = [];
+  for (const row of rows) {
+    let data: Record<string, unknown> = {};
+    try { data = row.published_json ? JSON.parse(row.published_json) : {}; } catch {}
+    let imageUrl: string | null = null;
+    if (typeof data.assetId === "string" && data.assetId) {
+      const asset = await c.env.DB.prepare("SELECT id,filename FROM media_assets WHERE id=? AND kind='image'").bind(data.assetId).first<{id:string;filename:string}>();
+      if (asset) imageUrl = mediaUrl(asset.id, asset.filename);
+    }
+    sections.push({ id: row.id, type: row.type, title: typeof data.title === "string" ? data.title : "", body: typeof data.body === "string" ? data.body : "", url: typeof data.url === "string" ? data.url : "", imageUrl });
+  }
+  c.header("Cache-Control", "public, max-age=0, must-revalidate");
+  return c.json({ page: { slug: page.slug, title: page.title, metaTitle: page.meta_title || page.title, metaDescription: page.meta_description || "", indexable: !!page.indexable, sections } });
+});
