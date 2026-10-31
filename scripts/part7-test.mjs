@@ -31,6 +31,11 @@ const unauthDns=await fetch(base+"/api/admin/domains/dns-check?hostname=www.3ell
 check("domain DNS diagnostics require an admin session",unauthDns.status===401,unauthDns.status);
 const unauthNs=await fetch(base+"/api/admin/domains/ns-check");
 check("public nameserver diagnostics require an admin session",unauthNs.status===401,unauthNs.status);
+const unauthDnsAudit=await fetch(base+"/api/admin/domains/audit");
+check("DNS audit history requires an admin session",unauthDnsAudit.status===401,unauthDnsAudit.status);
+const dnsAudit=await call("GET","/api/admin/domains/audit?limit=500");
+const dnsAuditData=await dnsAudit.json();
+check("DNS audit history returns a bounded empty list before any changes",dnsAudit.status===200&&Array.isArray(dnsAuditData.items)&&dnsAuditData.items.length===0,dnsAudit.status);
 const invalidDns=await call("GET","/api/admin/domains/dns-check?hostname=attacker.example");
 const invalidDnsData=await invalidDns.json();
 check("domain DNS diagnostics reject hostnames outside the configured zone",invalidDns.status===400&&invalidDnsData.error?.code==="invalid_hostname",invalidDns.status);
