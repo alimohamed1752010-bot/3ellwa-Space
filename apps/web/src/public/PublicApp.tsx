@@ -6,6 +6,7 @@ import PublicPage from "../PublicPage";
 import ProjectsPage from "./ProjectsPage";
 import LocalTime from "./LocalTime";
 import TypingSubtitle from "./TypingSubtitle";
+import WidgetBlock from "./WidgetBlock";
 import { useLinks } from "./useLinks";
 import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import { api } from "../shared/api";
@@ -160,7 +161,7 @@ function Home() {
       if(section.type==="text")return <section key={section.id} className={visibility}><Card className="p-5"><h2 className="mb-2 text-sm font-medium">{section.title||"About"}</h2><p className="whitespace-pre-wrap text-sm leading-7 text-muted">{section.body}</p></Card></section>;
       if(section.type==="gallery")return section.imageUrl?<figure key={section.id} className={visibility}><Card className="overflow-hidden"><img src={section.imageUrl} alt={section.title} loading="lazy" className="max-h-[36rem] w-full object-cover"/>{section.title&&<figcaption className="p-3 text-xs text-muted">{section.title}</figcaption>}{section.body&&<p className="px-3 pb-3 text-sm text-muted">{section.body}</p>}</Card></figure>:null;
       if(section.type==="spacer")return <div key={section.id} aria-hidden className={visibility} style={{height:Math.min(400,Math.max(0,Number(section.body)||32))}}/>;
-      if(section.type==="widget")return <section key={section.id} className={visibility}><Card className="p-5"><h2 className="text-sm font-medium">{section.title||"Widget"}</h2><p className="mt-2 text-xs text-muted">{section.body||"This widget has not been configured yet."}</p></Card></section>;
+      if(section.type==="widget")return section.widgetId?<div key={section.id} className={visibility}><WidgetBlock id={section.widgetId} title={section.title}/></div>:<section key={section.id} className={visibility}><Card className="p-5"><h2 className="text-sm font-medium">{section.title||"Widget"}</h2><p className="mt-2 text-xs text-muted">{section.body||"Choose a widget in Layout to display it here."}</p></Card></section>;
       return null;
     })}
   </main></div>;
