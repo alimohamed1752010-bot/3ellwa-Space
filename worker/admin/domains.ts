@@ -28,7 +28,7 @@ domainRoutes.get("/domains", async c => {
   const accountId = c.env.CF_ACCOUNT_ID;
   const zoneName = c.env.CF_ZONE_NAME || "3ellwa.space";
   if (!token || !accountId) {
-    return apiError(c, 503, "setup_required", "Domain manager needs the CF_API_TOKEN Worker secret. Add a Cloudflare API token with Zone Read, DNS Read, and Workers Scripts Read permissions, then retry.");
+    return apiError(c, 502, "setup_required", "Domain manager needs the CF_API_TOKEN Worker secret. Add a Cloudflare API token with Zone Read, DNS Read, and Workers Scripts Read permissions, then retry.");
   }
   try {
     const zoneQuery = "/zones?name=" + encodeURIComponent(zoneName) + "&account.id=" + encodeURIComponent(accountId) + "&per_page=50";
