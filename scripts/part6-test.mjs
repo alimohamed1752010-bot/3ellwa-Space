@@ -26,7 +26,9 @@ const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===und
 const get=async path=>(await call("GET",path)).json();
 const tag=Date.now().toString(36);
 const initial=await get("/api/admin/layout");
-const original=structuredClone(initial.published);
+const cleanLayout=value=>({sections:value.sections.map(s=>({id:s.id,type:s.type,title:s.title,body:s.body,assetId:s.assetId,widgetId:s.widgetId,enabled:s.enabled,visibleDesktop:s.visibleDesktop,visibleMobile:s.visibleMobile}))});
+const stripTheme=value=>{const t=structuredClone(value);delete t.background.assetUrl;return t;};
+const original=cleanLayout(initial.published);
 check("layout endpoint returns draft, published, and pending counts",Array.isArray(initial.draft.sections)&&initial.pending&&typeof initial.hasDraft==="boolean");
 const layout={sections:[
  {id:"profile",type:"profile",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true},
@@ -39,7 +41,7 @@ check("public site does not expose an unpublished layout",!pub.layout.sections.s
 const themeName="Part6 "+tag;
 r=await call("POST","/api/admin/themes",{name:themeName});let theme=(await r.json()).item;
 check("create a custom theme for unified publishing",r.status===201&&!!theme?.id,r.status);
-const tokens=structuredClone(theme.tokens);tokens.colors.accent="#12abef";
+const tokens=stripTheme(theme.tokens);tokens.colors.accent="#12abef";
 r=await call("PUT",`/api/admin/themes/${theme.id}/draft`,{tokens});theme=(await r.json()).item;
 check("save theme draft",r.status===200&&theme.draftTokens?.colors.accent==="#12abef",r.status);
 r=await call("POST","/api/admin/pages",{title:"Part 6 "+tag});let page=(await r.json()).item;
@@ -59,7 +61,7 @@ const after=await get("/api/admin/publish/history");
 check("publish history records the unified publish",after.items.length===before.items.length+1&&after.items[0].version===result.version);
 const draft2={sections:[...layout.sections,{id:"discard-"+tag,type:"text",title:"Discard me",body:"Not public",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true}]};
 r=await call("PUT","/api/admin/layout/draft",draft2);check("second layout draft saved",r.status===200,r.status);
-const tokens2=structuredClone(theme.tokens);tokens2.colors.accent="#ee8844";
+const tokens2=stripTheme(theme.tokens);tokens2.colors.accent="#ee8844";
 r=await call("PUT",`/api/admin/themes/${theme.id}/draft`,{tokens:tokens2});check("second theme draft saved",r.status===200,r.status);
 r=await call("POST","/api/admin/pages",{title:"Discard "+tag});const throwaway=(await r.json()).item;
 r=await call("POST","/api/admin/publish/discard",{});check("global discard endpoint succeeds",r.status===200,r.status);
