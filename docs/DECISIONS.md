@@ -65,3 +65,5 @@ Settled choices. A new chat must not reopen these unless the owner asks.
 52. Global search indexing defaults to disabled. `robots.txt` disallows crawling and `sitemap.xml` returns 404 until the owner explicitly enables indexing; noindex is a privacy preference, not access control.
 
 53. When global indexing is disabled, `robots.txt` must still allow crawlers to fetch public pages so they can observe the `X-Robots-Tag: noindex, nofollow` response header and HTML robots meta tag. It continues to disallow `/api/` and `/admin/`, and omits the sitemap. A blanket `Disallow: /` would prevent crawlers from seeing noindex and can leave known URLs indexed without descriptions.
+
+54. Part 10 DNS diagnostics are read-only. The admin endpoint accepts only subdomains of the configured zone and queries A, AAAA, and CNAME records through Cloudflare public DNS (1.1.1.1). This reports one resolver view, not global propagation or HTTP service health. DNS mutations remain a separate guarded checkpoint; no external hostname can be queried through this endpoint.
