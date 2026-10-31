@@ -34,6 +34,12 @@ check("admin can approve a guestbook entry",approveGuest.status===200,approveGue
 const publicApproved=await call("GET","/api/public/guestbook");const publicApprovedData=await publicApproved.json();
 check("approved guestbook entry appears publicly",publicApproved.status===200&&publicApprovedData.items?.some(x=>x.id===guestEntry?.id),publicApproved.status);
 if(guestEntry?.id){const deleteGuest=await call("DELETE",`/api/admin/guestbook/${guestEntry.id}`);check("admin can delete a guestbook entry",deleteGuest.status===200,deleteGuest.status);}
+const announcement=await call("POST","/api/admin/announcements",{title:"Integration notice",body:"Public announcement test.",style:"info",visible:true,startsAt:null,endsAt:null});const announcementData=await announcement.json();const announcementId=announcementData.item?.id;
+check("admin can create an announcement",announcement.status===201&&!!announcementId,announcement.status);
+const publicAnnouncements=await call("GET","/api/public/announcements");const publicAnnouncementData=await publicAnnouncements.json();
+check("visible announcement is exposed publicly",publicAnnouncements.status===200&&publicAnnouncementData.items?.some(x=>x.id===announcementId),publicAnnouncements.status);
+if(announcementId){const hidden=await call("PUT",`/api/admin/announcements/${announcementId}`,{title:"Integration notice",body:"Public announcement test.",style:"info",visible:false,startsAt:null,endsAt:null});check("admin can hide an announcement",hidden.status===200,hidden.status);const publicHidden=await call("GET","/api/public/announcements");const hiddenData=await publicHidden.json();check("hidden announcement is not public",!hiddenData.items?.some(x=>x.id===announcementId));const removed=await call("DELETE",`/api/admin/announcements/${announcementId}`);check("admin can delete an announcement",removed.status===200,removed.status);}
+
 
 
 const originalRaw=(await get("/api/admin/layout")).published;
