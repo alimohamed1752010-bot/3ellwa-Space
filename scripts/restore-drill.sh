@@ -64,7 +64,7 @@ echo "Verified backup checksum and gzip stream: $BACKUP_KEY"
 
 echo "Creating an isolated disposable D1 database..."
 CREATED="$(curl --fail --silent --show-error -X POST "$API/d1/database" -H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json" --data "$(jq -nc --arg name "$DRILL_DB_NAME" '{name:$name}')")"
-jq -e '.success == true and (.result.uuid | type == "string")' <<< "$CREATED" >/dev/null || {
+jq -e '.success == true and (.result.uuid | type == "string" and length > 0)' <<< "$CREATED" >/dev/null || {
   jq -r '.errors // "Cloudflare could not create the disposable D1 database."' <<< "$CREATED"
   exit 1
 }
