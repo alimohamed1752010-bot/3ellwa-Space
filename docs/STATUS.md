@@ -6,8 +6,8 @@ Last reconciled: 2026-10-31
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
 - Latest source changes include domain inventory improvements, SEO privacy hardening, and a manual GitHub Actions deployment fallback (`.github/workflows/deploy.yml`). The crawler-visible noindex follow-up (`6d1dc3b`) is deployed in Worker version 172.
-- Latest verified feature CI run [41225279620](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41225279620) completed successfully on commit `eb9f67f3d151f27ebd2ad1ec1bd055c2cb3ab663`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed. The CI run also uploaded a source ZIP artifact.
-- Cloudflare Worker: `3ellwa-space`; deployment `cad2a292-51cb-48d1-9973-64e7d5c7bba8`, version `fd19aea6-4f98-454c-855a-8d9a639ea2db` (version 182), assigned 100% traffic at 17:35:55 UTC on 2026-10-31. Cloudflare Workers Builds reports successful build `76863063-f857-4028-9389-99a31595f821` from code commit `3ebdcd5a11a9e57dbb65e6ef673b583f9a4ddcf6` (`Allow nested subdomains in DNS management`).
+- Latest verified feature CI run [41226235549](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41226235549) completed successfully on commit `251ee7f253e1c2ed44b3a8925c5e085c2be4da0a`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed. The CI run also uploaded a source ZIP artifact.
+- Cloudflare Worker: `3ellwa-space`; deployment `1da9a12e-86c3-4e1c-bdcb-2592982e0bb8`, version `edf7212e-fab4-490b-a2ca-acd7bc065199`, assigned 100% traffic at 17:48 UTC on 2026-10-31. Cloudflare Workers Builds reports successful build `70ece4c0-4cf8-4840-a716-f2738935bfe7` from code commit `251ee7f253e1c2ed44b3a8925c5e085c2be4da0a` (`Require typed hostname confirmation for DNS changes`).
 - Cron Trigger: `0 * * * *` (hourly UTC).
 - Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so domain inventory and DNS management remain unavailable until the owner configures it. The token needs Zone Read, DNS Read, and DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the account. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
 - Public domain: https://3ellwa.space.
@@ -29,12 +29,12 @@ Last reconciled: 2026-10-31
 - Part 9 backup preparation: daily D1 export and R2 media mirror workflow, private backup bucket, and recovery documentation. Activation and disposable restore drill remain outstanding.
 - Part 10 checkpoint 1: read-only domain inventory API and admin screen are implemented. The API paginates zones, DNS records, and Worker custom domains (up to 2,000 entries). The screen supports filtering DNS records and copying hostnames/targets.
 - Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check.
-- Part 10 checkpoint 3: DNS record create/edit/delete API and UI are implemented for A, AAAA, and CNAME subdomain records. Writes require a two-minute HMAC preview token, fresh Cloudflare state, exact hostname confirmation, and an explicit UI checkbox. Apex records, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. API token stays server-side. CI and the Cloudflare build/deployment both passed. No production DNS change has been executed.
+- Part 10 checkpoint 3: DNS record create/edit/delete API and UI are implemented for A, AAAA, and CNAME subdomain records. Writes require a two-minute HMAC preview token, fresh Cloudflare state, typed hostname confirmation, and an explicit UI checkbox. Apex records, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. API token stays server-side. CI and the Cloudflare build/deployment both passed. No production DNS change has been executed.
 
 ## Verification
 
-- CI run [41225279620](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41225279620) passed both jobs on feature commit `eb9f67f3d151f27ebd2ad1ec1bd055c2cb3ab663`, including local Worker integration tests and source ZIP creation/upload. The integration logs confirm DNS authentication, zone-bound hostname validation, protected `www`, invalid IPv4, unsupported record type, and missing-token checks all passed.
-- Cloudflare Workers Builds reports successful build `76863063-f857-4028-9389-99a31595f821` from code commit `3ebdcd5a11a9e57dbb65e6ef673b583f9a4ddcf6`; Worker version 182 is assigned 100% traffic. This is deployment metadata verification, not a live public HTTP test.
+- CI run [41226235549](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41226235549) passed both jobs on feature commit `251ee7f253e1c2ed44b3a8925c5e085c2be4da0a`, including local Worker integration tests and source ZIP creation/upload. The preceding DNS-manager integration checks confirmed authentication, zone-bound hostname validation, protected `www`, invalid IPv4, unsupported record type, and missing-token behavior.
+- Cloudflare Workers Builds reports successful build `70ece4c0-4cf8-4840-a716-f2738935bfe7` from code commit `251ee7f253e1c2ed44b3a8925c5e085c2be4da0a`; Worker version `edf7212e-fab4-490b-a2ca-acd7bc065199` is assigned 100% traffic. This is deployment metadata verification, not a live public HTTP test.
 - Cloudflare API inspection confirmed the Worker, hourly schedule, D1/R2 bindings, and the separate backup bucket.
 - Cloudflare API inspection confirmed no backup objects currently exist under `d1/` or `media/`.
 - Cloudflare API inspection confirms version 172 (`7bd78949-6d07-49c8-9112-18ffadeae561`) is assigned 100% traffic and was built from commit `6d1dc3b`, which contains the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
@@ -46,7 +46,7 @@ Last reconciled: 2026-10-31
 - Add the four GitHub Actions backup secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify both D1 and media objects in the private bucket.
 - Perform a restore drill against a disposable D1 database only.
 - Complete authenticated desktop/mobile visual acceptance, safe media upload/selection, layout loading, public page/project routes, and a real configured integration refresh.
-- Part 10 next: configure the Worker token with DNS Edit, then test only against a disposable subdomain with explicit owner approval. Broader connectivity checks and setup guidance remain later work.
+- Part 10 next: configure the Worker token with DNS Edit, then test only against a disposable subdomain with explicit owner approval. Broader service connectivity checks remain later work.
 
 ## Environment
 
