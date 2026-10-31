@@ -12,9 +12,10 @@ import { NAV } from "./nav";
 import NavigationScreen from "./navigation/NavigationScreen";
 import ProfileScreen from "./profile/ProfileScreen";
 import PageManager from "./PageManager";
+import ProjectsScreen from "./projects/ProjectsScreen";
 
 // Screens that exist so far. Everything else in NAV is still an EmptyScreen (see nav.ts for the part that builds it).
-const SCREENS: Record<string, ComponentType> = { profile: ProfileScreen, navigation: NavigationScreen, links: LinksScreen, media: MediaScreen, pages: PageManager };
+const SCREENS: Record<string, ComponentType> = { profile: ProfileScreen, navigation: NavigationScreen, links: LinksScreen, media: MediaScreen, pages: PageManager, projects: ProjectsScreen };
 
 type Auth = "loading" | "anon" | "authed";
 
