@@ -6,6 +6,7 @@ A personal website and private admin dashboard for one owner, running entirely o
 - Full specification: docs/PROJECT.md
 - What is done and what is next: docs/STATUS.md
 - Technical design: docs/ARCHITECTURE.md, docs/SCHEMA.md, docs/API.md
+- Operations: docs/DEPLOYMENT.md, docs/MAINTENANCE.md, docs/BACKUP.md
 - Decisions already made: docs/DECISIONS.md
 
 ## How the build is split
