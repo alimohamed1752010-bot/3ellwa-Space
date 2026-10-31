@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../shared/api";
 import { Button, Card, CardBody, CardHeader } from "../shared/ui";
 
@@ -14,6 +14,26 @@ export default function DomainsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [setup, setSetup] = useState(false);
+  const [query, setQuery] = useState("");
+  const [copied, setCopied] = useState("");
+
+  const filteredRecords = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return data?.records ?? [];
+    return (data?.records ?? []).filter(record =>
+      [record.name, record.type, record.content, record.comment ?? ""].some(value => value.toLowerCase().includes(q))
+    );
+  }, [data, query]);
+
+  const copyValue = useCallback(async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+      window.setTimeout(() => setCopied(current => current === label ? "" : current), 1800);
+    } catch {
+      setError("Clipboard access was blocked by the browser. Select and copy the value manually.");
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,9 +53,12 @@ export default function DomainsScreen() {
 
   return (
     <div className="rise flex flex-col gap-5">
-      <div>
-        <h1 className="text-xl font-medium">Domains</h1>
-        <p className="mt-1 text-sm text-muted">Subdomains, DNS records, and Cloudflare Worker destinations for 3ellwa.space.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-medium">Domains</h1>
+          <p className="mt-1 text-sm text-muted">Subdomains, DNS records, and Cloudflare Worker destinations for 3ellwa.space.</p>
+        </div>
+        <Button size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>Refresh inventory</Button>
       </div>
 
       {loading && <p className="text-sm text-muted" role="status">Checking Cloudflare…</p>}
@@ -78,12 +101,20 @@ export default function DomainsScreen() {
         </Card>
 
         <Card>
-          <CardHeader title="DNS records" description={`${data.records.length} records returned for this zone.`} />
+          <CardHeader title="DNS records" description={`${filteredRecords.length} of ${data.records.length} records shown.`} />
           <CardBody className="flex flex-col gap-3">
-            {data.records.length ? data.records.map(record => <div key={record.id} className="grid gap-1 border-b border-line pb-3 last:border-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <div className="min-w-0"><p className="break-all text-sm font-medium">{record.name}</p><p className="break-all font-mono text-xs text-muted">{record.content}</p></div>
+            <label className="flex flex-col gap-1 text-xs text-muted">
+              Search records
+              <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Hostname, type, or target" className="w-full rounded-control border border-line bg-raised px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
+            </label>
+            {filteredRecords.length ? filteredRecords.map(record => <div key={record.id} className="grid gap-2 border-b border-line pb-3 last:border-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2"><p className="break-all text-sm font-medium">{record.name}</p><button type="button" className="rounded-control border border-line px-2 py-1 text-xs text-muted hover:text-ink" onClick={() => void copyValue(record.name, "name:" + record.id)}>{copied === "name:" + record.id ? "Copied" : "Copy name"}</button></div>
+                <div className="mt-1 flex flex-wrap items-center gap-2"><p className="break-all font-mono text-xs text-muted">{record.content}</p><button type="button" className="rounded-control border border-line px-2 py-1 text-xs text-muted hover:text-ink" onClick={() => void copyValue(record.content, "content:" + record.id)}>{copied === "content:" + record.id ? "Copied" : "Copy target"}</button></div>
+              </div>
               <div className="flex items-center gap-2 text-xs text-muted"><span className="rounded-control bg-raised px-2 py-1">{record.type}</span><span>{record.proxied ? "Proxied" : "DNS only"}</span><span>TTL {record.ttl === 1 ? "Auto" : record.ttl}</span></div>
-            </div>) : <p className="text-sm text-muted">No DNS records were returned.</p>}
+            </div>) : <p className="text-sm text-muted">{data.records.length ? "No records match this search." : "No DNS records were returned."}</p>}
+            {copied && <p className="text-xs text-success" role="status">Copied to clipboard.</p>}
           </CardBody>
         </Card>
         <p className="text-xs text-muted">Read-only checkpoint. DNS changes are deliberately not enabled yet. Last checked {new Date(data.checkedAt).toLocaleString()}.</p>
