@@ -1,9 +1,29 @@
+import http from "node:http";
 // LOCAL ONLY test of Part 3 routes (links, categories, /go tracking, public links, import/export).
-// Needs the same setup as part25-test.mjs (DISABLE_OTP=true, local D1 migrated, `npm run dev` running).
+// Needs ADMIN_PASSWORD + DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook, local D1 migrated, and `npm run dev` running.
 // node scripts/part3-test.mjs [baseUrl] "test password"
 const base = (process.argv[2] ?? "http://localhost:8787").replace(/\/$/, "");
 const PASSWORD = process.argv[3];
 if (!PASSWORD) { console.error('Usage: node scripts/part3-test.mjs http://localhost:8787 "test password"'); process.exit(1); }
+
+const discordMessages = [];
+const discordServer = http.createServer((req, res) => {
+  let body = "";
+  req.on("data", (chunk) => (body += chunk));
+  req.on("end", () => {
+    try { discordMessages.push(JSON.parse(body).content ?? ""); } catch {}
+    res.writeHead(204).end();
+  });
+});
+await new Promise((resolve) => discordServer.listen(9999, "127.0.0.1", resolve));
+const waitForCode = async () => {
+  for (let i = 0; i < 30; i++) {
+    const code = discordMessages.at(-1)?.match(/\*\*(\d{8})\*\*/)?.[1];
+    if (code) return code;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error("No OTP received. Check DISCORD_AUTH_WEBHOOK_URL in .dev.vars.");
+};
 let failed = 0;
 const check = (n, ok, info = "") => { console.log(`${ok ? "PASS" : "FAIL"}  ${n}${info !== "" ? "  (" + info + ")" : ""}`); if (!ok) failed++; };
 const J = { "content-type": "application/json", "cf-connecting-ip": "10.9.0.3" };
@@ -20,8 +40,12 @@ r = await fetch(base + "/api/admin/links", { method: "POST", headers: J, body: "
 r = await fetch(base + "/links"); check("/links serves the public shell with status 200", r.status === 200 && /3w-shell" content="public/.test(await r.text()), r.status);
 
 r = await fetch(base + "/api/auth/password", { method: "POST", headers: J, body: JSON.stringify({ password: PASSWORD }) });
-const cookie = (r.headers.get("set-cookie") ?? "").split(";")[0];
-check("login gives a session", r.status === 200 && !!cookie, r.status);
+const challenge = await r.json();
+const code = await waitForCode();
+const verified = await fetch(base + "/api/auth/code", { method: "POST", headers: J, body: JSON.stringify({ challengeId: challenge.challengeId, code }) });
+const auth = await verified.json();
+const cookie = (verified.headers.get("set-cookie") ?? "").split(";")[0];
+check("login with password + Discord OTP gives a session", r.status === 200 && !!challenge.challengeId && verified.status === 200 && auth.authenticated === true && !!cookie, verified.status);
 const H = { ...J, cookie };
 const call = (m, p, body) => fetch(base + p, { method: m, headers: H, body: body === undefined ? undefined : JSON.stringify(body) });
 const mk = async (body) => { const x = await call("POST", "/api/admin/links", body); return { status: x.status, ...(await x.json()) }; };
