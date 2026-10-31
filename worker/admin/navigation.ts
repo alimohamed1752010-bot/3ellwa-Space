@@ -8,7 +8,7 @@ export const navigationRoutes = new Hono<AppEnv>();
 const itemSchema=z.object({
  label:z.string().trim().min(1).max(40),
  targetType:z.enum(["url","page"]).default("url"),
- url:navTarget.optional(),
+ url:navTarget.nullable().optional(),
  pageId:z.string().max(100).nullable().optional(),
  openNewTab:z.boolean().default(false),
  visible:z.boolean().default(true),
