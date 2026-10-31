@@ -17,6 +17,7 @@ Last reconciled: 2026-10-31
 - A manual-only GitHub Actions deployment fallback is available at `.github/workflows/deploy.yml`; it runs typecheck, web tests, build, local D1 migrations, and the Worker auth/integration scripts before deploying. It has not been run and requires repository secret `CF_API_TOKEN`. Normal Cloudflare Workers Builds remains the documented push-to-main deployment path.
 
 ## Latest checkpoint
+- Domain audit history is implemented in source but is not yet verified by CI or deployed. The new migration must be applied by the normal deployment pipeline. The existing missing Worker `CF_API_TOKEN` still blocks live domain inventory and DNS writes.
 
 - Privacy default hardening: SEO settings now default to search indexing disabled. Production D1 was updated to `indexingEnabled: false` (settings version 2, verified directly). Worker version 172 includes the follow-up crawler fix.
 - Crawler behavior correction: while indexing is disabled, `robots.txt` now allows public crawling (but disallows `/api/` and `/admin/`) so crawlers can read the `X-Robots-Tag: noindex, nofollow` header and HTML robots meta tag. The sitemap remains unavailable. This source change and its integration assertions are included in Worker version 172, which is assigned 100% of production traffic.
@@ -30,6 +31,8 @@ Last reconciled: 2026-10-31
 - Part 10 checkpoint 1: read-only domain inventory API and admin screen are implemented. The API paginates zones, DNS records, and Worker custom domains (up to 2,000 entries). The screen supports filtering DNS records and copying hostnames/targets.
 - Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check. A separate zone NS check compares the resolver-visible NS answer with Cloudflare-assigned nameservers; it does not directly inspect the registrar parent-zone delegation.
 - Part 10 checkpoint 3: DNS record create/edit/delete API and UI are implemented for A, AAAA, and CNAME subdomain records. Writes require a two-minute HMAC preview token, fresh Cloudflare state, typed hostname confirmation, and an explicit UI checkbox. The typed hostname is included in the mutation request and must match the preview; the confirmation callback tracks the typed value correctly. Apex records, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. API token stays server-side. CI and the Cloudflare build/deployment both passed. No production DNS change has been executed.
+
+- Part 10 checkpoint 4: successful DNS changes made through this dashboard are now written to an append-only D1 audit table (`dns_change_audit`) with before/after snapshots. The Domains screen shows the latest 50 entries and refreshes history after a mutation. A failed audit insert is surfaced as a warning without misreporting the already-successful Cloudflare write. Migration 0004 adds the table; CI must verify it before deployment.
 
 ## Verification
 
