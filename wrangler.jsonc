@@ -7,6 +7,9 @@
   "observability": {
     "enabled": true
   },
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
   "assets": {
     "directory": "./apps/web/dist",
     "binding": "ASSETS",
