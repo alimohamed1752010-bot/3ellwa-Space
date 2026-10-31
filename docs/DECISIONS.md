@@ -63,3 +63,5 @@ Settled choices. A new chat must not reopen these unless the owner asks.
 51. Never test a destructive D1 restore on the production database. Restore drills use a disposable database; production recovery requires a fresh export, a confirmed bookmark, and an explicit operator decision.
 
 52. Global search indexing defaults to disabled. `robots.txt` disallows crawling and `sitemap.xml` returns 404 until the owner explicitly enables indexing; noindex is a privacy preference, not access control.
+
+53. When global indexing is disabled, `robots.txt` must still allow crawlers to fetch public pages so they can observe the `X-Robots-Tag: noindex, nofollow` response header and HTML robots meta tag. It continues to disallow `/api/` and `/admin/`, and omits the sitemap. A blanket `Disallow: /` would prevent crawlers from seeing noindex and can leave known URLs indexed without descriptions.
