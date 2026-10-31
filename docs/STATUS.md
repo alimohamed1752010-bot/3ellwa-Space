@@ -41,11 +41,11 @@ Update this file at the end of every part. It is the first thing a new chat read
 - Owner walkthrough (still not run): GitHub repo, Cloudflare account, D1 and R2 creation, secrets, remote migration, first deploy. Nothing of this has been run yet.
 
 ## Next
-- Run the Part 4 checkpoint 1 checks below and report anything that fails.
-- Part 4 checkpoint 2: pages manager, block editor, reserved slugs (links, go), public page rendering, page targets in navigation. Checkpoint 3: projects (CRUD, links, gallery, public /projects). Then the owner walkthrough and acceptance on the deployed site.
+- Run npm install, npm run typecheck, npm run test:web, and npm run test:part4 locally. The Part 4 test requires the local fake Discord webhook on 127.0.0.1:9999 and a migrated local D1; do not use the removed DISABLE_OTP bypass.
+- Checkpoint 3: projects (CRUD, links, gallery, public /projects). Then the owner walkthrough and acceptance on the deployed site.
 
 ## Part 4 checkpoint 1: what was and was not verified
-This chat's sandbox had no network, so `npm install` was impossible: no Hono, zod, React, Vitest, Vite, or Wrangler. That means NOTHING below was typechecked, unit-tested in jsdom, or run against a Worker.
+This chat's sandbox had no network, so npm install was impossible: no Hono, zod, React, Vitest, Vite, or Wrangler. The checkpoint 1 and checkpoint 2 changes therefore remain unverified by typecheck, jsdom tests, or a local Worker run.
 - Verified here: image-size reading (PNG, JPEG incl. progressive, GIF, WebP lossy, lossless, extended) against real files made with Pillow; filename tag helpers; the crop and resize geometry (all pass in plain Node); every new or changed .ts/.tsx file parses (syntax check only).
 - Written but never run: worker/admin/media.ts, worker/lib/mediaUsage.ts (SQL), all React components, apps/web/src/media.test.tsx, scripts/part4-test.mjs.
 - Owner steps, in this order, from the repo folder:
