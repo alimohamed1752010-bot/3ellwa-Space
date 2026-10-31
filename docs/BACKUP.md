@@ -46,13 +46,13 @@ The workflow `.github/workflows/backup-d1.yml` is configured to run daily at 02:
 Add these under **GitHub repository → Settings → Secrets and variables → Actions → New repository secret**:
 
 - `CF_ACCOUNT_ID`: Cloudflare account ID.
-- `CF_API_TOKEN`: API token with the minimum D1 permissions needed to export the named database.
+- `CF_API_TOKEN`: Cloudflare API token with **Account → D1 → Edit** permission, scoped to this Cloudflare account. D1 export is an account-level write-authorized API operation; D1 Read alone is not sufficient. Do not use a Global API Key.
 - `R2_ACCESS_KEY_ID`: R2 S3 access key scoped to read objects from `3ellwa-space-media` and read/write objects in `3ellwa-space-backups`.
 - `R2_SECRET_ACCESS_KEY`: secret half of that R2 S3 key.
 
 Do not paste these values into chat or commit them. The workflow will fail closed if any are missing. The D1 database ID and bucket names are non-secret resource identifiers in the workflow.
 
-After adding the secrets, use **Actions → Daily Cloudflare backups → Run workflow**. Confirm the run succeeds and that the backup bucket contains both a dated `d1/*.sql.gz` export and objects under `media/`. Until this first run succeeds, scheduled off-site backups are not yet active.
+After adding the secrets, use **Actions → Daily Cloudflare backups → Run workflow**. The workflow validates that all four values are present before making any requests; it never prints their values. Confirm the run succeeds and that the backup bucket contains both a dated `d1/*.sql.gz` export and objects under `media/`. Until this first run succeeds, scheduled off-site backups are not yet active.
 
 ## Restore from an exported SQL file
 
