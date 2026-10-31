@@ -76,7 +76,7 @@ function ProfileView({ site }: { site: PublicSite }) {
   useEffect(() => { document.title = site.site.title; }, [site.site.title]);
   const name = p.displayName || p.username || "";
   return (
-      <main className="mx-auto w-full max-w-2xl px-4">
+      <div className="w-full">
         <Card className="rise overflow-hidden">
           <div className="aspect-[3/1] w-full bg-gradient-to-br from-accent-strong/30 via-raised to-surface">
             {p.bannerUrl && <img src={p.bannerUrl} alt="" className="size-full object-cover" />}
@@ -133,7 +133,7 @@ function ProfileView({ site }: { site: PublicSite }) {
             )}
           </div>
         </Card>
-      </main>
+      </div>
   );
 }
 
