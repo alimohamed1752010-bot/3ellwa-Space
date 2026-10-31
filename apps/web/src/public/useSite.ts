@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { applyThemeTokens, type PublicTheme } from "../shared/theme";
 import { api } from "../shared/api";
@@ -41,10 +41,8 @@ export function PublicSiteProvider({children}:{children:ReactNode}){
  const state=useSite();
  useEffect(()=>{if(state.status==="ready"&&state.data)applyThemeTokens(state.data.theme.tokens);},[state.status,state.data]);
  const bg=state.status==="ready"?state.data?.theme.tokens.background:null;
- return <SiteContext.Provider value={state}>
-  {bg?.mode==="video"&&bg.assetUrl&&<video id="theme-background-video" aria-hidden autoPlay muted loop playsInline src={bg.assetUrl} />}
-  {children}
- </SiteContext.Provider>;
+ const video=bg?.mode==="video"&&bg.assetUrl?createElement("video",{id:"theme-background-video",key:bg.assetUrl,"aria-hidden":true,autoPlay:true,muted:true,loop:true,playsInline:true,src:bg.assetUrl}):null;
+ return createElement(SiteContext.Provider,{value:state},video,children);
 }
 
 export function usePublicSite(){
