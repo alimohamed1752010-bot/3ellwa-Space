@@ -18,7 +18,8 @@ const cookie=(verified.headers.get("set-cookie")??"").split(";")[0];check("passw
 const H={...headers,cookie};
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
 const get=async path=>(await call("GET",path)).json();
-const original=(await get("/api/admin/layout")).published;
+const originalRaw=(await get("/api/admin/layout")).published;
+const original={sections:originalRaw.sections.map(x=>({id:x.id,type:x.type,title:x.title,body:x.body,assetId:x.assetId,widgetId:x.widgetId,enabled:x.enabled,visibleDesktop:x.visibleDesktop,visibleMobile:x.visibleMobile}))};
 const tag=Date.now().toString(36);
 const body={name:"Part 7 "+tag,type:"text",enabled:true,displayMode:"card",visibleDesktop:true,visibleMobile:true,refreshSeconds:300,config:{text:"Widget framework integration test."}};
 r=await call("POST","/api/admin/widgets",body);let created=(await r.json()).item;
