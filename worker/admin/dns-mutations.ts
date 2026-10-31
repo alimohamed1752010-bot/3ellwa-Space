@@ -171,6 +171,49 @@ async function verify(c: Parameters<typeof apiError>[0], plan: Plan, data: { con
     && data.confirmationToken === await sign(plan, data.expiresAt, c.env.CF_API_TOKEN!);
 }
 
+async function writeAudit(
+  c: Parameters<typeof apiError>[0],
+  action: Plan["action"],
+  hostname: string,
+  record: DnsRecord,
+  before: DnsRecord | null,
+  after: DnsRecord | null,
+): Promise<boolean> {
+  try {
+    await c.env.DB.prepare(
+      "INSERT INTO dns_change_audit (id, action, hostname, record_type, record_id, before_json, after_json) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).bind(
+      crypto.randomUUID(), action, hostname, record.type, record.id,
+      before ? JSON.stringify({ type: before.type, name: before.name, content: before.content, ttl: before.ttl, proxied: before.proxied, comment: before.comment ?? null }) : null,
+      after ? JSON.stringify({ type: after.type, name: after.name, content: after.content, ttl: after.ttl, proxied: after.proxied, comment: after.comment ?? null }) : null,
+    ).run();
+    return true;
+  } catch (error) {
+    console.error(JSON.stringify({ event: "dns_audit_write_failed", action, hostname, message: error instanceof Error ? error.message : "unknown" }));
+    return false;
+  }
+}
+
+dnsMutationRoutes.get("/domains/audit", async c => {
+  const rawLimit = Number(c.req.query("limit") ?? "50");
+  const limit = Number.isInteger(rawLimit) ? Math.min(100, Math.max(1, rawLimit)) : 50;
+  try {
+    const result = await c.env.DB.prepare(
+      "SELECT id, action, hostname, record_type AS recordType, record_id AS recordId, before_json AS beforeJson, after_json AS afterJson, created_at AS createdAt FROM dns_change_audit ORDER BY created_at DESC, rowid DESC LIMIT ?"
+    ).bind(limit).all<{ id: string; action: string; hostname: string; recordType: string; recordId: string; beforeJson: string | null; afterJson: string | null; createdAt: string }>();
+    return c.json({
+      items: result.results.map(item => ({
+        id: item.id, action: item.action, hostname: item.hostname, recordType: item.recordType,
+        recordId: item.recordId, before: item.beforeJson ? JSON.parse(item.beforeJson) : null,
+        after: item.afterJson ? JSON.parse(item.afterJson) : null, createdAt: item.createdAt,
+      })),
+    }, 200, { "Cache-Control": "no-store" });
+  } catch (error) {
+    console.error(JSON.stringify({ event: "dns_audit_read_failed", message: error instanceof Error ? error.message : "unknown" }));
+    return apiError(c, 500, "audit_unavailable", "DNS audit history is unavailable. Apply the latest database migrations and retry.");
+  }
+});
+
 dnsMutationRoutes.post("/domains/records/preview", makePreview);
 
 dnsMutationRoutes.post("/domains/records", async c => {
@@ -181,8 +224,9 @@ dnsMutationRoutes.post("/domains/records", async c => {
   if (!await verify(c, result.plan, parsed.data)) return apiError(c, 409, "preview_stale", "The preview expired or changed. Generate a new preview and confirm it again.");
   try {
     const item = await cf<DnsRecord>(c.env.CF_API_TOKEN!, "/zones/" + result.plan.zoneId + "/dns_records", "POST", result.plan.after);
-    console.info(JSON.stringify({ event: "dns_changed", action: "create", hostname: item.name, type: item.type, recordId: item.id }));
-    return c.json({ item }, 201);
+    const auditRecorded = await writeAudit(c, "create", item.name, item, null, item);
+    console.info(JSON.stringify({ event: "dns_changed", action: "create", hostname: item.name, type: item.type, recordId: item.id, auditRecorded }));
+    return c.json({ item, auditRecorded }, 201);
   } catch (error) {
     return apiError(c, 502, "dns_change_failed", error instanceof Error ? error.message : "Cloudflare could not create the DNS record.");
   }
@@ -197,8 +241,9 @@ dnsMutationRoutes.put("/domains/records/:id", async c => {
   if (!await verify(c, result.plan, parsed.data)) return apiError(c, 409, "preview_stale", "The preview expired or changed. Generate a new preview and confirm it again.");
   try {
     const item = await cf<DnsRecord>(c.env.CF_API_TOKEN!, "/zones/" + result.plan.zoneId + "/dns_records/" + parsed.data.recordId, "PUT", result.plan.after);
-    console.info(JSON.stringify({ event: "dns_changed", action: "edit", hostname: item.name, type: item.type, recordId: item.id }));
-    return c.json({ item });
+    const auditRecorded = await writeAudit(c, "edit", item.name, item, result.plan.before, item);
+    console.info(JSON.stringify({ event: "dns_changed", action: "edit", hostname: item.name, type: item.type, recordId: item.id, auditRecorded }));
+    return c.json({ item, auditRecorded });
   } catch (error) {
     return apiError(c, 502, "dns_change_failed", error instanceof Error ? error.message : "Cloudflare could not update the DNS record.");
   }
@@ -213,8 +258,9 @@ dnsMutationRoutes.delete("/domains/records/:id", async c => {
   if (!await verify(c, result.plan, parsed.data)) return apiError(c, 409, "preview_stale", "The preview expired or changed. Generate a new preview and confirm it again.");
   try {
     await cf<{ id: string }>(c.env.CF_API_TOKEN!, "/zones/" + result.plan.zoneId + "/dns_records/" + parsed.data.recordId, "DELETE");
-    console.info(JSON.stringify({ event: "dns_changed", action: "delete", hostname: result.plan.hostname, type: result.plan.before?.type, recordId: parsed.data.recordId }));
-    return c.json({ ok: true });
+    const auditRecorded = await writeAudit(c, "delete", result.plan.hostname, result.plan.before!, result.plan.before, null);
+    console.info(JSON.stringify({ event: "dns_changed", action: "delete", hostname: result.plan.hostname, type: result.plan.before?.type, recordId: parsed.data.recordId, auditRecorded }));
+    return c.json({ ok: true, auditRecorded });
   } catch (error) {
     return apiError(c, 502, "dns_change_failed", error instanceof Error ? error.message : "Cloudflare could not delete the DNS record.");
   }
