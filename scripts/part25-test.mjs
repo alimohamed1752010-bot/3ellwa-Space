@@ -1,10 +1,30 @@
+import http from "node:http";
 // LOCAL ONLY test of Part 2.5 routes (profile, social links, navigation, media, public site).
-// 1) .dev.vars needs DISABLE_OTP=true and a hash of the test password (the password is still required)
+// 1) .dev.vars needs mandatory Discord OTP and a hash of the test password (the password is still required)
 // 2) npm run db:migrate:local && npm run dev   (other terminal; use a fresh local DB for the empty-site check)
 // 3) node scripts/part25-test.mjs [baseUrl] "test password"
 const base = (process.argv[2] ?? "http://localhost:8787").replace(/\/$/, "");
 const PASSWORD = process.argv[3];
 if (!PASSWORD) { console.error('Usage: node scripts/part25-test.mjs http://localhost:8787 "test password"'); process.exit(1); }
+
+const discordMessages = [];
+const discordServer = http.createServer((req, res) => {
+  let body = "";
+  req.on("data", (chunk) => (body += chunk));
+  req.on("end", () => {
+    try { discordMessages.push(JSON.parse(body).content ?? ""); } catch {}
+    res.writeHead(204).end();
+  });
+});
+await new Promise((resolve) => discordServer.listen(9999, "127.0.0.1", resolve));
+const waitForCode = async () => {
+  for (let i = 0; i < 30; i++) {
+    const code = discordMessages.at(-1)?.match(/\*\*(\d{8})\*\*/)?.[1];
+    if (code) return code;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error("No OTP received. Check DISCORD_AUTH_WEBHOOK_URL in .dev.vars.");
+};
 let failed = 0;
 const check = (n, ok, info = "") => { console.log(`${ok ? "PASS" : "FAIL"}  ${n}${info !== "" ? "  (" + info + ")" : ""}`); if (!ok) failed++; };
 const J = { "content-type": "application/json", "cf-connecting-ip": "10.9.0.1" };
@@ -20,11 +40,14 @@ for (const p of ["/api/admin/profile", "/api/admin/social-links", "/api/admin/na
 }
 r = await fetch(base + "/api/admin/media/upload", { method: "POST", body: new FormData() }); check("upload without session -> 401", r.status === 401, r.status);
 
-// --- sign in (DISABLE_OTP)
+// --- sign in with mandatory Discord OTP
 r = await fetch(base + "/api/auth/password", { method: "POST", headers: J, body: JSON.stringify({ password: PASSWORD }) });
-const j = await r.json();
-const cookie = (r.headers.get("set-cookie") ?? "").split(";")[0];
-check("login with DISABLE_OTP gives a session", r.status === 200 && j.authenticated === true && !!cookie, r.status);
+const challenge = await r.json();
+const code = await waitForCode();
+const verified = await fetch(base + "/api/auth/code", { method: "POST", headers: J, body: JSON.stringify({ challengeId: challenge.challengeId, code }) });
+const auth = await verified.json();
+const cookie = (verified.headers.get("set-cookie") ?? "").split(";")[0];
+check("login with password + Discord OTP gives a session", r.status === 200 && !!challenge.challengeId && verified.status === 200 && auth.authenticated === true && !!cookie, verified.status);
 const H = { ...J, cookie };
 const call = (m, p, body) => fetch(base + p, { method: m, headers: H, body: body === undefined ? undefined : JSON.stringify(body) });
 
