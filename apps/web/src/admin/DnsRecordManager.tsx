@@ -63,6 +63,7 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
     setDraft({ name: record.name, type: record.type as Draft["type"], content: record.content, ttl: String(record.ttl), proxied: record.proxied, comment: record.comment ?? "" });
     setPreview(null);
     setConfirmed(false);
+    setTypedName("");
     setError("");
   }, [workerDomains, zoneName]);
 
@@ -103,10 +104,11 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
       setError(e instanceof ApiError ? e.message : "Cloudflare could not apply the DNS change.");
       setPreview(null);
       setConfirmed(false);
+      setTypedName("");
     } finally {
       setBusy(false);
     }
-  }, [confirmed, draft, onChanged, preview, recordId, reset]);
+  }, [confirmed, draft, onChanged, preview, recordId, reset, typedName]);
 
   const manageable = records.filter(record => editable(record, zoneName, workerDomains));
 
