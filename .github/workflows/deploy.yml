@@ -32,6 +32,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Production deploys are only allowed from main."
+            exit 1
+          fi
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
             echo "::error::Missing repository secret CF_API_TOKEN."
             exit 1
