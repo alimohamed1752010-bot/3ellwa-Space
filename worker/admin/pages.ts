@@ -9,7 +9,7 @@ export const pageRoutes = new Hono<AppEnv>();
 const reserved = new Set(["links", "go", "projects", "api", "media", "admin", "robots.txt", "sitemap.xml"]);
 const slug = z.string().trim().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).refine((s) => !reserved.has(s) && !s.startsWith("go-"), "This URL is reserved or invalid.");
 const block = z.object({ id: z.string().max(100).optional(), type: z.enum(["text","links","projects","gallery","timeline","embed"]), title: z.string().max(120).default(""), body: z.string().max(20000).default(""), url: z.string().max(2000).default(""), assetId: z.string().max(100).default("") });
-const draftSchema = z.object({ title: z.string().trim().min(1).max(120), slug, metaTitle: z.string().max(120).default(""), metaDescription: z.string().max(300).default(""), visibility: z.enum(["public","hidden"]).default("public"), indexable: z.boolean().default(false), sections: z.array(block).max(50) });
+const draftSchema = z.object({ title: z.string().trim().min(1).max(120), slug, metaTitle: z.string().max(120).default(""), metaDescription: z.string().max(300).default(""), visibility: z.enum(["public","hidden"]).default("public"), indexable: z.boolean().default(true), sections: z.array(block).max(50) });
 type Draft = z.infer<typeof draftSchema>;
 interface Page { id:string; slug:string; title:string; status:"draft"|"published"; visibility:"public"|"hidden"|"password"; meta_title:string|null; meta_description:string|null; indexable:number; layout_json:string; draft_layout_json:string|null; version:number; created_at:string; updated_at:string; published_at:string|null }
 interface Section { id:string; page_id:string; type:string; sort_order:number; draft_json:string|null; published_json:string|null; deleted_in_draft:number }
@@ -36,8 +36,8 @@ pageRoutes.get("/pages/:id",async c=>{ const p=await load(c.env.DB,c.req.param("
 pageRoutes.post("/pages",async c=>{
  const p=await parseBody(c,z.object({title:z.string().trim().min(1).max(120)})); if("res" in p)return p.res;
  let s=makeSlug(p.data.title),n=2; while(await taken(c.env.DB,s))s=makeSlug(p.data.title)+"-"+n++;
- const id=randomId(12),d={title:p.data.title,slug:s,metaTitle:"",metaDescription:"",visibility:"public",indexable:false};
- await c.env.DB.prepare("INSERT INTO pages (id,slug,title,status,visibility,indexable,layout_json,draft_layout_json) VALUES (?,?,?,'draft','public',0,'{}',?)").bind(id,s,p.data.title,JSON.stringify(d)).run();
+ const id=randomId(12),d={title:p.data.title,slug:s,metaTitle:"",metaDescription:"",visibility:"public",indexable:true};
+ await c.env.DB.prepare("INSERT INTO pages (id,slug,title,status,visibility,indexable,layout_json,draft_layout_json) VALUES (?,?,?,'draft','public',1,'{}',?)").bind(id,s,p.data.title,JSON.stringify(d)).run();
  return c.json({item:(await load(c.env.DB,id))!.item},201);
 });
 pageRoutes.put("/pages/:id/draft",async c=>{
