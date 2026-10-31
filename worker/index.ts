@@ -30,11 +30,29 @@ import { goRoutes, publicLinkRoutes } from "./public/links";
 
 const app = new Hono<AppEnv>();
 
+app.use("*", async (c, next) => {
+  await next();
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("X-Frame-Options", "DENY");
+  c.header("Referrer-Policy", c.req.path.startsWith("/api/admin") ? "no-referrer" : "strict-origin-when-cross-origin");
+  c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  c.header("Cross-Origin-Opener-Policy", "same-origin");
+  if (new URL(c.req.url).protocol === "https:") c.header("Strict-Transport-Security", "max-age=15552000");
+  const type = c.res.headers.get("content-type") ?? "";
+  if (type.includes("text/html") && !c.res.headers.has("content-security-policy")) {
+    c.header("Content-Security-Policy", "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob:; font-src 'self' data: https:; connect-src 'self'; upgrade-insecure-requests");
+  }
+});
+
 // Basic CSRF defence on top of SameSite=Strict: a browser POST from another origin is refused.
 app.use("/api/*", async (c, next) => {
   if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method)) {
     const origin = c.req.header("origin");
-    if (origin && new URL(origin).host !== new URL(c.req.url).host) return apiError(c, 403, "bad_origin", "Cross-origin request refused.");
+    if (origin) {
+      let requestOrigin = "";
+      try { requestOrigin = new URL(origin).origin; } catch { return apiError(c, 403, "bad_origin", "Cross-origin request refused."); }
+      if (requestOrigin !== new URL(c.req.url).origin) return apiError(c, 403, "bad_origin", "Cross-origin request refused.");
+    }
   }
   await next();
 });
