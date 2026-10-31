@@ -198,7 +198,7 @@ describe("Navigation screen", () => {
     const blogRow = screen.getByText("Blog").closest("li")!;
     expect(within(blogRow).getByRole("button", { name: "Hide" })).toBeInTheDocument();
     expect(calls.find((c) => c.method === "POST")!.body).toMatchObject({ label: "Blog", targetType: "url", url: "/blog", pageId: null, openNewTab: false, visible: true });
-    await u.click(screen.getByRole("button", { name: "Hide Blog" }));
+    await u.click(within(blogRow).getByRole("button", { name: "Hide" }));
     expect(await screen.findByText("(hidden)")).toBeInTheDocument();
     expect(calls.find((c) => c.path === "/api/admin/navigation/n2")!.body).toMatchObject({ visible: false, label: "Blog" });
     await u.click(screen.getByRole("button", { name: "Move Blog up" }));
