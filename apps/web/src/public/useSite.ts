@@ -39,8 +39,8 @@ const SiteContext=createContext<SiteState|null>(null);
 
 export function PublicSiteProvider({children}:{children:ReactNode}){
  const state=useSite();
- useEffect(()=>{if(state.status==="ready"&&state.data)applyThemeTokens(state.data.theme.tokens);},[state.status,state.data]);
- const bg=state.status==="ready"?state.data?.theme.tokens.background:null;
+ useEffect(()=>{if(state.status==="ready"&&state.data?.theme?.tokens)applyThemeTokens(state.data.theme.tokens);},[state.status,state.data]);
+ const bg=state.status==="ready"?state.data?.theme?.tokens?.background:null;
  const video=bg?.mode==="video"&&bg.assetUrl?createElement("video",{id:"theme-background-video",key:bg.assetUrl,"aria-hidden":true,autoPlay:true,muted:true,loop:true,playsInline:true,src:bg.assetUrl}):null;
  return createElement(SiteContext.Provider,{value:state},video,children);
 }
