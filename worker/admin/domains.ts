@@ -9,20 +9,28 @@ type Zone = { id: string; name: string; status: string; name_servers?: string[] 
 type DnsRecord = { id: string; name: string; type: string; content: string; ttl: number; proxied: boolean; comment?: string | null };
 type WorkerDomain = { hostname: string; service: string; environment: string; enabled: boolean; zone_name: string };
 
-async function cloudflare<T>(token: string, path: string): Promise<T> {
-  const response = await fetch("https://api.cloudflare.com/client/v4" + path, {
-    headers: { authorization: "Bearer " + token, accept: "application/json" },
-    signal: AbortSignal.timeout(8000),
-  });
-  let body: CfEnvelope<T> | null = null;
-  try { body = await response.json() as CfEnvelope<T>; } catch { /* handled below */ }
-  if (!response.ok || !body?.success) {
-    const message = body?.errors?.map(x => x.message).filter(Boolean).join(" ") || "Cloudflare API request failed.";
-    throw new Error(response.status === 403
-      ? "The Cloudflare token needs Zone Read and DNS Read on the 3ellwa.space zone, plus Workers Scripts Read on the account."
-      : message);
+async function cloudflareList<T>(token: string, path: string): Promise<T[]> {
+  const items: T[] = [];
+  const separator = path.includes("?") ? "&" : "?";
+  const maxPages = 20;
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await fetch("https://api.cloudflare.com/client/v4" + path + separator + "per_page=100&page=" + page, {
+      headers: { authorization: "Bearer " + token, accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+    let body: CfEnvelope<T[]> | null = null;
+    try { body = await response.json() as CfEnvelope<T[]>; } catch { /* handled below */ }
+    if (!response.ok || !body?.success || !Array.isArray(body.result)) {
+      const message = body?.errors?.map(x => x.message).filter(Boolean).join(" ") || "Cloudflare API request failed.";
+      throw new Error(response.status === 403
+        ? "The Cloudflare token needs Zone Read and DNS Read on the 3ellwa.space zone, plus Workers Scripts Read on the account."
+        : message);
+    }
+    items.push(...body.result);
+    const totalPages = Math.max(1, body.result_info?.total_pages ?? 1);
+    if (page >= totalPages) return items;
   }
-  return body.result;
+  throw new Error("Cloudflare returned more than 2,000 inventory entries; the result was stopped at the safety limit.");
 }
 
 domainRoutes.get("/domains", async c => {
@@ -33,14 +41,14 @@ domainRoutes.get("/domains", async c => {
     return apiError(c, 502, "setup_required", "Domain manager needs the CF_API_TOKEN Worker secret. The token requires Zone Read and DNS Read on the 3ellwa.space zone, plus Workers Scripts Read on the Cloudflare account.");
   }
   try {
-    const zoneQuery = "/zones?name=" + encodeURIComponent(zoneName) + "&account.id=" + encodeURIComponent(accountId) + "&per_page=50";
-    const zones = await cloudflare<Zone[]>(token, zoneQuery);
+    const zoneQuery = "/zones?name=" + encodeURIComponent(zoneName) + "&account.id=" + encodeURIComponent(accountId);
+    const zones = await cloudflareList<Zone>(token, zoneQuery);
     const zone = zones.find(x => x.name.toLowerCase() === zoneName.toLowerCase());
     if (!zone) return apiError(c, 404, "zone_not_found", "The 3ellwa.space zone was not found in this Cloudflare account.");
 
     const [records, workerDomains] = await Promise.all([
-      cloudflare<DnsRecord[]>(token, "/zones/" + encodeURIComponent(zone.id) + "/dns_records?per_page=100&page=1"),
-      cloudflare<WorkerDomain[]>(token, "/accounts/" + encodeURIComponent(accountId) + "/workers/domains"),
+      cloudflareList<DnsRecord>(token, "/zones/" + encodeURIComponent(zone.id) + "/dns_records"),
+      cloudflareList<WorkerDomain>(token, "/accounts/" + encodeURIComponent(accountId) + "/workers/domains"),
     ]);
     const relevantRecords = records
       .filter(r => r.name === zone.name || r.name.toLowerCase().endsWith("." + zone.name.toLowerCase()))
