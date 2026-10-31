@@ -39,3 +39,53 @@ jobs:
 
       - name: Build production web assets
         run: npm run build:web
+
+  worker-integration:
+    name: Local Worker integration tests
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ADMIN_PASSWORD: ci-only-test-password
+      DISCORD_AUTH_WEBHOOK_URL: http://127.0.0.1:9999/hook
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build:web
+
+      - name: Configure local-only test credentials
+        run: |
+          printf 'ADMIN_PASSWORD=%s\\nDISCORD_AUTH_WEBHOOK_URL=%s\\n' "$ADMIN_PASSWORD" "$DISCORD_AUTH_WEBHOOK_URL" > .dev.vars
+
+      - name: Apply local D1 migrations
+        run: npm run db:migrate:local
+
+      - name: Run Worker integration suite
+        run: |
+          npx wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/3ellwa-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:8787/api/health >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/3ellwa-worker.log
+            exit 1
+          fi
+          node scripts/part4-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
