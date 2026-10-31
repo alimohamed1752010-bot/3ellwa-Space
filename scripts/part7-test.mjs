@@ -39,6 +39,20 @@ check("admin can create an announcement",announcement.status===201&&!!announceme
 const publicAnnouncements=await call("GET","/api/public/announcements");const publicAnnouncementData=await publicAnnouncements.json();
 check("visible announcement is exposed publicly",publicAnnouncements.status===200&&publicAnnouncementData.items?.some(x=>x.id===announcementId),publicAnnouncements.status);
 if(announcementId){const hidden=await call("PUT",`/api/admin/announcements/${announcementId}`,{title:"Integration notice",body:"Public announcement test.",style:"info",visible:false,startsAt:null,endsAt:null});check("admin can hide an announcement",hidden.status===200,hidden.status);const publicHidden=await call("GET","/api/public/announcements");const hiddenData=await publicHidden.json();check("hidden announcement is not public",!hiddenData.items?.some(x=>x.id===announcementId));const removed=await call("DELETE",`/api/admin/announcements/${announcementId}`);check("admin can delete an announcement",removed.status===200,removed.status);}
+const seoInitial=await call("GET","/api/admin/seo-privacy");const seoInitialData=await seoInitial.json();
+check("SEO privacy defaults to search indexing disabled",seoInitial.status===200&&seoInitialData.settings?.indexingEnabled===false,seoInitial.status);
+const seoEnabled=await call("PUT","/api/admin/seo-privacy",{indexingEnabled:true,siteTitle:"Integration test site",siteDescription:"SEO test description."});
+check("admin can enable search indexing and save metadata",seoEnabled.status===200,seoEnabled.status);
+const robotsEnabled=await fetch(base+"/robots.txt");const robotsText=await robotsEnabled.text();
+check("robots.txt allows crawling only when enabled",robotsEnabled.status===200&&robotsText.includes("Sitemap:")&&robotsText.includes("Disallow: /api/"),robotsEnabled.status);
+const sitemapEnabled=await fetch(base+"/sitemap.xml");const sitemapText=await sitemapEnabled.text();
+check("sitemap is generated when indexing is enabled",sitemapEnabled.status===200&&sitemapText.includes("<urlset"),sitemapEnabled.status);
+const seoDisabled=await call("PUT","/api/admin/seo-privacy",{indexingEnabled:false,siteTitle:"Integration test site",siteDescription:"SEO test description."});
+const robotsDisabled=await fetch(base+"/robots.txt");const robotsDisabledText=await robotsDisabled.text();
+check("robots.txt blocks crawling after indexing is disabled",seoDisabled.status===200&&robotsDisabledText.includes("Disallow: /")&&!robotsDisabledText.includes("Sitemap:"),robotsDisabled.status);
+const sitemapDisabled=await fetch(base+"/sitemap.xml");
+check("sitemap is unavailable while indexing is disabled",sitemapDisabled.status===404,sitemapDisabled.status);
+
 
 
 
