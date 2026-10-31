@@ -40,14 +40,15 @@ describe("Login", () => {
     expect(calls.find((c) => c.path === "/api/auth/code")!.body).toEqual({ challengeId: "c1", code: "12345678", trustDevice: true });
   });
 
-  it("DISABLE_OTP response skips the code step", async () => {
+  it("a successful password response without a challenge cannot bypass Discord OTP", async () => {
     routes["POST /api/auth/password"] = { body: { authenticated: true } };
     const onAuthed = vi.fn();
     const u = userEvent.setup();
     render(<Login onAuthed={onAuthed} />);
     await u.type(screen.getByLabelText("Password"), "x");
     await u.click(screen.getByRole("button", { name: "Continue" }));
-    await waitFor(() => expect(onAuthed).toHaveBeenCalled());
+    expect(await screen.findByRole("alert")).toHaveTextContent("without a login challenge");
+    expect(onAuthed).not.toHaveBeenCalled();
     expect(screen.queryByLabelText("Login code")).toBeNull();
   });
 
@@ -113,7 +114,7 @@ describe("AdminApp", () => {
     expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
     await u.click(screen.getAllByRole("link", { name: "Pages" })[0]);
     expect(await screen.findByRole("heading", { name: "Pages" })).toBeInTheDocument();
-    expect(screen.getByText(/built in Part 4/)).toBeInTheDocument();
+    expect(screen.getByText(/Build custom pages with content blocks/)).toBeInTheDocument();
     await u.click(screen.getAllByRole("button", { name: "Log out" })[0]);
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
     await act(async () => {});
