@@ -14,7 +14,8 @@
     "test:smoke": "node scripts/smoke-test.mjs",
     "test:part25": "node scripts/part25-test.mjs",
     "test:part3": "node scripts/part3-test.mjs",
-    "test:part4": "node scripts/part4-test.mjs"
+    "test:part4": "node scripts/part4-test.mjs",
+    "test:part5": "node scripts/part5-test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

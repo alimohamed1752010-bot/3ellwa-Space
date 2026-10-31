@@ -21,25 +21,21 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install locked dependencies
         run: npm ci
-
       - name: Typecheck Worker and web app
         run: npm run typecheck
-
       - name: Run web tests
         run: npm run test:web
-
       - name: Check Worker integration script syntax
-        run: node --check scripts/part4-test.mjs
-
+        run: |
+          node --check scripts/part4-test.mjs
+          node --check scripts/part5-test.mjs
       - name: Build production web assets
         run: npm run build:web
 
@@ -54,26 +50,20 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install locked dependencies
         run: npm ci
-
       - name: Build web assets
         run: npm run build:web
-
       - name: Configure local-only test credentials
         run: |
           printf 'ADMIN_PASSWORD=%s\nDISCORD_AUTH_WEBHOOK_URL=%s\n' "$ADMIN_PASSWORD" "$DISCORD_AUTH_WEBHOOK_URL" > .dev.vars
-
       - name: Apply local D1 migrations
         run: npm run db:migrate:local
-
       - name: Run Worker integration suite
         run: |
           npx wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/3ellwa-worker.log 2>&1 &
@@ -92,3 +82,4 @@ jobs:
             exit 1
           fi
           node scripts/part4-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
+          node scripts/part5-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
