@@ -5,7 +5,7 @@ import type { AppEnv } from "../env";
 import { randomId } from "../lib/crypto";
 import { apiError } from "../lib/http";
 import { imageSize } from "../lib/imageSize";
-import { IMAGE_TYPES, MAX_BYTES, buildFilename, displayName, mediaUrl, newTag, safeBaseName, sniffImage, splitFilename } from "../lib/media";
+import { IMAGE_TYPES, MAX_BYTES, MAX_VIDEO_BYTES, buildFilename, displayName, mediaUrl, newTag, safeBaseName, sniffImage, sniffVideo, splitFilename } from "../lib/media";
 import type { ImageMime, UploadPurpose } from "../lib/media";
 import { USED_COUNT_SQL, assetUsage } from "../lib/mediaUsage";
 import { parseBody } from "../lib/validate";
@@ -125,9 +125,26 @@ mediaAdminRoutes.get("/media", async (c) => {
 });
 
 mediaAdminRoutes.get("/media/:id/usage", async (c) => {
-  const row = await getAsset(c.env.DB, c.req.param("id"));
-  if (!row) return apiError(c, 404, "not_found", "Image not found.");
+  const row = await c.env.DB.prepare("SELECT id FROM media_assets WHERE id=?").bind(c.req.param("id")).first<{id:string}>();
+  if (!row) return apiError(c, 404, "not_found", "Media file not found.");
   return c.json({ usage: await assetUsage(c.env.DB, row.id) });
+});
+
+/* ---------- background video upload (used by themes; separate from the image grid) ---------- */
+mediaAdminRoutes.post("/media/background-video", async (c) => {
+  let form: FormData;
+  try { form = await c.req.formData(); } catch { return apiError(c,400,"invalid_form","Send the video as a multipart form with a 'file' field."); }
+  const file=form.get("file");
+  if(!(file instanceof File)||file.size===0)return apiError(c,400,"no_file","Choose a video file first.");
+  if(file.size>MAX_VIDEO_BYTES)return apiError(c,413,"too_large","Background videos must be 20 MB or smaller.");
+  const bytes=new Uint8Array(await file.arrayBuffer()),mime=sniffVideo(bytes);
+  if(!mime)return apiError(c,415,"bad_type","Only MP4 and WebM videos are supported.");
+  const id=randomId(12),ext=mime==="video/mp4"?"mp4":"webm",filename=`${safeBaseName(file.name)}.${ext}`,key=`media/${id}/${filename}`;
+  await c.env.MEDIA.put(key,bytes,{httpMetadata:{contentType:mime}});
+  try{
+    await c.env.DB.prepare("INSERT INTO media_assets (id,r2_key,filename,mime_type,size_bytes,kind) VALUES (?,?,?,?,?,'video')").bind(id,key,filename,mime,bytes.byteLength).run();
+  }catch(e){await c.env.MEDIA.delete(key);throw e;}
+  return c.json({asset:{id,filename,name:filename,mimeType:mime,sizeBytes:bytes.byteLength,kind:"video",url:mediaUrl(id,filename)}},201);
 });
 
 /* ---------- upload ---------- */
@@ -262,7 +279,13 @@ mediaAdminRoutes.post("/media/:id/replace", async (c) => {
 mediaAdminRoutes.delete("/media/:id", async (c) => {
   const id = c.req.param("id");
   const row = await c.env.DB.prepare("SELECT r2_key FROM media_assets WHERE id = ?").bind(id).first<{ r2_key: string }>();
-  if (!row) return apiError(c, 404, "not_found", "Image not found.");
+  if (!row) return apiError(c, 404, "not_found", "Media file not found.");
+  const themes=(await c.env.DB.prepare("SELECT id,tokens_json,draft_tokens_json FROM themes WHERE INSTR(COALESCE(tokens_json,'') || COALESCE(draft_tokens_json,''),?)>0").bind(id).all<{id:string;tokens_json:string;draft_tokens_json:string|null}>()).results;
+  for(const theme of themes){
+    const clear=(raw:string|null)=>{if(!raw)return raw;try{const value=JSON.parse(raw);if(value?.background?.assetId===id){value.background.assetId=null;value.background.mode="solid";return JSON.stringify(value);}}catch{}return raw;};
+    const tokens=clear(theme.tokens_json),draft=clear(theme.draft_tokens_json);
+    if(tokens!==theme.tokens_json||draft!==theme.draft_tokens_json)await c.env.DB.prepare("UPDATE themes SET tokens_json=?,draft_tokens_json=?,updated_at=datetime('now') WHERE id=?").bind(tokens,draft,theme.id).run();
+  }
   await c.env.DB.prepare("DELETE FROM media_assets WHERE id = ?").bind(id).run();
   await c.env.MEDIA.delete(row.r2_key);
   return c.json({ ok: true });
