@@ -12,6 +12,7 @@ import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import { api } from "../shared/api";
 import type { PublicSite } from "./useSite";
 import GuestbookPage from "./GuestbookPage";
+import AnnouncementBar from "./AnnouncementBar";
 
 function AnalyticsTracker() {
   const location=useLocation();
@@ -197,6 +198,7 @@ export default function PublicApp() {
     <BrowserRouter>
       <AnalyticsTracker />
       <PublicSiteProvider>
+      <AnnouncementBar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/links" element={<LinksPage />} />
