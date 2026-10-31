@@ -149,7 +149,7 @@ function Home() {
   const links = useLinks();
   if (s.status === "loading") return <Spinner />;
   if (s.status === "error" || !s.data) return <SiteError retry={s.retry} />;
-  if (isEmptySite(s.data)) return <EmptyState />;
+  if (isEmptySite(s.data) && !(links.status==="ready" && (links.data?.total??0)>0)) return <EmptyState />;
   const sections=s.data.layout?.sections??[{id:"profile",type:"profile",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true,imageUrl:null},{id:"links",type:"links",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true,imageUrl:null}];
   return <div className="min-h-screen pb-16"><Menu items={s.data.navigation}/><main className="mx-auto flex w-full flex-col gap-[var(--3w-spacing)] px-4 pt-6" style={{maxWidth:"var(--3w-container-width)"}}>
     {sections.filter(x=>x.enabled).map(section=>{
