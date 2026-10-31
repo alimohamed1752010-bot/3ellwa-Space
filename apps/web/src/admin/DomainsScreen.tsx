@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../shared/api";
 import { Button, Card, CardBody, CardHeader } from "../shared/ui";
+import DnsRecordManager from "./DnsRecordManager";
 
 type DomainData = {
   zone: { name: string; status: string; nameServers: string[] };
@@ -126,6 +127,7 @@ export default function DomainsScreen() {
         <Card>
           <CardHeader title="DNS records" description={`${filteredRecords.length} of ${data.records.length} records shown.`} />
           <CardBody className="flex flex-col gap-3">
+            <DnsRecordManager zoneName={data.zone.name} records={data.records} workerDomains={data.workerDomains} onChanged={load} />
             <label className="flex flex-col gap-1 text-xs text-muted">
               Search records
               <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Hostname, type, or target" className="w-full rounded-control border border-line bg-raised px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
@@ -141,7 +143,7 @@ export default function DomainsScreen() {
             {copied && <p className="text-xs text-success" role="status">Copied to clipboard.</p>}
           </CardBody>
         </Card>
-        <p className="text-xs text-muted">Read-only checkpoint. DNS changes are deliberately not enabled yet. Public DNS checks query Cloudflare's 1.1.1.1 resolver; they do not guarantee that every network has received the same result. Last inventory check {new Date(data.checkedAt).toLocaleString()}.</p>
+        <p className="text-xs text-muted">DNS writes are restricted to supported subdomain records and require a fresh preview plus explicit confirmation. Public DNS checks query Cloudflare's 1.1.1.1 resolver; they do not guarantee that every network has received the same result. Last inventory check {new Date(data.checkedAt).toLocaleString()}.</p>
       </>}
     </div>
   );
