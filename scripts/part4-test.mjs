@@ -211,6 +211,31 @@ check("hidden page navigation item is omitted publicly", navResponse.status === 
 await call("DELETE", `/api/admin/navigation/${pageNav.id}`);
 await call("DELETE", `/api/admin/pages/${pageItem.id}`);
 
+// --- projects
+const projectBody = { name: `Project ${tag}`, slug: `project-${tag}`, description: "A test project", technologies: ["TypeScript", "Cloudflare"], category: "Software", status: "active", startedOn: "2026-01-15", featured: true, visible: true, links: [{ label: "Website", url: "https://example.com" }], gallery: [] };
+let projectResponse = await call("POST", "/api/admin/projects", projectBody);
+let project = (await projectResponse.json()).item;
+check("create project with custom link and technologies", projectResponse.status === 201 && project?.slug === projectBody.slug && project.technologies.includes("TypeScript") && project.links[0]?.label === "Website", projectResponse.status);
+let publicProjects = await (await fetch(base + "/api/public/projects")).json();
+check("public projects list includes visible project", publicProjects.items.some((x) => x.id === project.id));
+let publicProject = await fetch(base + "/api/public/projects/" + project.slug);
+let publicProjectData = (await publicProject.json()).item;
+check("public project detail includes links and description", publicProject.status === 200 && publicProjectData?.description === "A test project" && publicProjectData.links[0]?.url === "https://example.com");
+projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...projectBody, name: "Updated " + tag, visible: false });
+project = (await projectResponse.json()).item;
+publicProjects = await (await fetch(base + "/api/public/projects")).json();
+check("hidden project is omitted from public list", projectResponse.status === 200 && !publicProjects.items.some((x) => x.id === project.id));
+projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...projectBody, slug: pageItem?.slug ?? projectBody.slug, name: "Collision " + tag });
+check("project cannot take a page URL", projectResponse.status === 409, projectResponse.status);
+projectResponse = await call("POST", `/api/admin/projects/${project.id}/duplicate`);
+const copiedProject = (await projectResponse.json()).item;
+check("duplicate project creates hidden copy", projectResponse.status === 201 && copiedProject?.visible === false && copiedProject?.name.includes("copy"));
+projectResponse = await call("DELETE", `/api/admin/projects/${copiedProject.id}`);
+check("delete duplicated project", projectResponse.status === 200, projectResponse.status);
+projectResponse = await call("DELETE", `/api/admin/projects/${project.id}`);
+check("delete project", projectResponse.status === 200, projectResponse.status);
+check("deleted project disappears publicly", (await fetch(base + "/api/public/projects/" + projectBody.slug)).status === 404);
+
 check("cross-origin POST refused (403)", (await fetch(base + "/api/admin/media/folders", { method: "POST", headers: { ...H, origin: "https://evil.example" }, body: JSON.stringify({ name: "x" }) })).status === 403);
 
 console.log(failed ? `\n${failed} FAILED` : "\nAll checks passed");
