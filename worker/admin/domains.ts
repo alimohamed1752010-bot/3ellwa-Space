@@ -67,6 +67,7 @@ domainRoutes.get("/domains/dns-check", async c => {
       resolver: "Cloudflare public DNS (1.1.1.1)",
       records: results,
       hasAddress: results.some(result => (result.type === "A" || result.type === "AAAA") && result.answers.length > 0),
+      hasAnswer: results.some(result => result.answers.length > 0),
       checkedAt: new Date().toISOString(),
     }, 200, { "Cache-Control": "no-store" });
   } catch (error) {
