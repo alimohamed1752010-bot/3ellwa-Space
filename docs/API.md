@@ -130,3 +130,28 @@ Public:
 - A failed refresh records `lastError` and the last attempt time. If a previous successful cache exists, its status remains usable and the stale snapshot stays public; the freshness timestamp continues to reflect the last successful refresh.
 - Public integration data and GitHub/Minecraft widgets include the last successful snapshot timestamp. Widgets display its age.
 - Disabled integrations are not fetched by the scheduled handler.
+
+
+## Guestbook (Part 8 checkpoint 2)
+
+Public:
+- GET /api/public/guestbook -> { items } containing the latest 50 approved entries only.
+- POST /api/public/guestbook { name, message, website? } -> 202 { ok, message }. Entries are pending until approved. Name is limited to 50 characters; message to 500. A hidden honeypot is used for basic bot filtering, and each IP hash is limited to three submissions per hour. Raw IP addresses are not stored.
+- GET /guestbook -> public guestbook page and submission form. New entries are not shown until moderation.
+
+Admin (session required):
+- GET /api/admin/guestbook?status=pending|approved|rejected|all -> { items } (up to 200).
+- PUT /api/admin/guestbook/:id/status { status: pending|approved|rejected } -> { ok }.
+- DELETE /api/admin/guestbook/:id -> { ok }.
+- Admin navigation: Guestbook. Approving publishes an entry; rejecting or leaving pending keeps it private.
+
+## Announcements (Part 8 checkpoint 2)
+
+Admin (session required):
+- GET /api/admin/announcements -> { items }.
+- POST /api/admin/announcements and PUT /api/admin/announcements/:id accept { title, body, style: info|success|warning, visible, startsAt, endsAt } and return { item }. Dates are ISO strings or null. End time must be later than start time.
+- DELETE /api/admin/announcements/:id -> { ok }.
+
+Public:
+- GET /api/public/announcements -> { items } containing up to three currently active, visible announcements. Start/end windows are enforced server-side.
+- Active announcements render across public routes. Hidden, scheduled, and expired announcements are not exposed.
