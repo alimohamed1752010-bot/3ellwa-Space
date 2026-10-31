@@ -85,3 +85,19 @@ This restores missing objects and updates matching keys. It does not delete extr
 - The separate R2 backup bucket was created on 2026-10-31.
 - The GitHub backup workflow is prepared but requires the four repository secrets above before it can run.
 - A restore drill against a disposable database has **not** been completed. Do not claim disaster recovery is fully tested until a disposable restore drill and a successful scheduled backup have both been verified.
+
+
+## Disposable restore drill
+
+The manual workflow **Actions → Cloudflare backup restore drill** tests the newest compressed D1 export without modifying the production database:
+
+1. Finds the newest `d1/*.sql.gz` object and downloads its SHA-256 sidecar.
+2. Verifies the checksum and gzip stream before attempting an import.
+3. Creates a uniquely named disposable D1 database (`3ellwa-space-restore-drill-*`).
+4. Imports the SQL export into that database and queries the restored schema, migration history, and DNS audit table.
+5. Compares every current live-media object key and size against the private backup mirror. Extra historical objects in the backup are allowed because the regular backup intentionally does not delete old media.
+6. Deletes the disposable D1 database in an exit cleanup handler. If Cloudflare refuses cleanup, the workflow fails and prints the exact disposable database name for manual cleanup.
+
+The workflow uses the same four repository secrets as the scheduled backup. The Cloudflare token must have **Account → D1 → Edit** so it can create, query, and delete the disposable database. R2 credentials need read access to both buckets. Run it only after a successful backup has created a D1 export and media mirror. A successful drill validates the latest D1 export and media mirror; it is not a production restore and does not test switching Worker bindings.
+
+Until this workflow completes successfully, recovery remains unverified. Never point the drill at the production database.
