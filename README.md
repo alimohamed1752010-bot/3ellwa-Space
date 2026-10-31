@@ -10,7 +10,7 @@ A personal website and private admin dashboard for one owner, running entirely o
 - Decisions already made: docs/DECISIONS.md
 
 ## How the build is split
-The project is built in parts. Each part has a self-contained prompt in prompts/. To continue in any chat or account: paste the next prompt, upload the repo as a zip, and the assistant reads docs/ first. Every part ends by updating docs/STATUS.md and docs/DECISIONS.md.
+The project is built in parts. Each part has a self-contained prompt in prompts/. To continue in any chat or account: paste the next prompt, upload the repo as a zip, and the assistant reads docs/ first. Every major milestone ends by updating docs/STATUS.md and docs/DECISIONS.md, with related features, tests, and documentation delivered together.
 
 ## One-time setup (Part 2 walks through it step by step)
 1. Create a GitHub repo and push this folder.
