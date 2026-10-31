@@ -8,6 +8,7 @@ import { navigationRoutes } from "./admin/navigation";
 import { mediaAdminRoutes } from "./admin/media";
 import { linkRoutes } from "./admin/links";
 import { pageRoutes } from "./admin/pages";
+import { projectRoutes } from "./admin/projects";
 import { publicRoutes } from "./public/site";
 import { mediaPublicRoutes } from "./public/media";
 import { goRoutes, publicLinkRoutes } from "./public/links";
@@ -42,6 +43,7 @@ app.route("/api/admin", navigationRoutes);
 app.route("/api/admin", mediaAdminRoutes);
 app.route("/api/admin", linkRoutes);
 app.route("/api/admin", pageRoutes);
+app.route("/api/admin", projectRoutes);
 
 app.route("/api/public", publicRoutes);
 app.route("/api/public", publicLinkRoutes);
@@ -68,7 +70,7 @@ app.all("*", async (c) => {
   // 2. Decide which shell, if any.
   const adminPath = normalizeAdminPath(env.ADMIN_PATH);
   const isAdmin = adminPath !== null && (path === adminPath || path.startsWith(adminPath + "/"));
-  const isPublic = !isAdmin && (path === "/" || path === "/links" || (await publicPageExists(env, path)));
+  const isPublic = !isAdmin && (path === "/" || path === "/links" || path === "/projects" || (path.startsWith("/projects/") ? await publicProjectExists(env, path.slice("/projects/".length)) : await publicPageExists(env, path)));
   const status = isAdmin || isPublic ? 200 : 404;
 
   // 3. Serve the HTML shell. Wrong admin paths and unknown paths take the exact same branch (status 404).
@@ -90,6 +92,13 @@ app.all("*", async (c) => {
   }
   return new Response(req.method === "HEAD" ? null : html, { status, headers });
 });
+
+async function publicProjectExists(env: Env, slug: string): Promise<boolean> {
+  try {
+    if (!slug || slug.length > 80 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return false;
+    return !!await env.DB.prepare("SELECT 1 FROM projects WHERE slug=? AND visible=1 AND status!='archived'").bind(slug).first();
+  } catch { return false; }
+}
 
 async function publicPageExists(env: Env, path: string): Promise<boolean> {
   try {
