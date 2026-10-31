@@ -218,6 +218,12 @@ const projectBody = { name: `Project ${tag}`, slug: `project-${tag}`, descriptio
 let projectResponse = await call("POST", "/api/admin/projects", projectBody);
 let project = (await projectResponse.json()).item;
 check("create project with images, custom link, and technologies", projectResponse.status === 201 && project?.slug === projectBody.slug && project.technologies.includes("TypeScript") && project.links[0]?.label === "Website" && project.gallery[0]?.caption === "Project screenshot" && !!project.logoUrl, projectResponse.status);
+let collisionPageResponse = await call("POST", "/api/admin/pages", { title: `Page collision ${tag}` });
+const collisionPage = (await collisionPageResponse.json()).item;
+const collisionDraft = { title: collisionPage.title, slug: project.slug, metaTitle: "", metaDescription: "", visibility: "public", indexable: false, sections: [] };
+collisionPageResponse = await call("PUT", `/api/admin/pages/${collisionPage.id}/draft`, collisionDraft);
+check("custom page cannot take an existing project URL", collisionPageResponse.status === 409, collisionPageResponse.status);
+await call("DELETE", `/api/admin/pages/${collisionPage.id}`);
 let publicProjects = await (await fetch(base + "/api/public/projects")).json();
 check("public projects list includes visible project", publicProjects.items.some((x) => x.id === project.id));
 let publicProject = await fetch(base + "/api/public/projects/" + project.slug);
@@ -226,7 +232,7 @@ check("public project detail includes links, gallery, and description", publicPr
 projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...projectBody, name: "Updated " + tag, visible: false });
 project = (await projectResponse.json()).item;
 publicProjects = await (await fetch(base + "/api/public/projects")).json();
-check("hidden project is omitted from public list", projectResponse.status === 200 && !publicProjects.items.some((x) => x.id === project.id));
+check("hidden project is omitted from public list", projectResponse.status === 200 && !publicProjects.items.some((x) => x.id === project.id));\ncheck("hidden project detail shell returns 404", (await fetch(base + "/projects/" + project.slug)).status === 404);
 projectResponse = await call("POST", "/api/admin/projects", { ...projectBody, name: "Collision " + tag });
 check("duplicate project slug is refused", projectResponse.status === 409, projectResponse.status);
 projectResponse = await call("POST", `/api/admin/projects/${project.id}/duplicate`);
