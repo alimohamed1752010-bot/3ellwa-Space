@@ -58,7 +58,7 @@ function lockedResponse(c: Context<AppEnv>, seconds: number) {
 }
 
 function notConfigured(c: Context<AppEnv>) {
-  return apiError(c, 500, "not_configured", "Server auth secrets are not configured.");
+  return apiError(c, 500, "not_configured", "ADMIN_PASSWORD and DISCORD_AUTH_WEBHOOK_URL must be configured.");
 }
 
 function country(c: Context<AppEnv>) {
