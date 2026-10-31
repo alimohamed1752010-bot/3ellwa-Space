@@ -64,8 +64,8 @@ export default function LayoutEditor(){
  const load=useCallback(async()=>{
   setError("");
   try{
-   const [layout,pub]=await Promise.all([api.get<LayoutResponse>("/api/admin/layout"),api.get<{items:HistoryItem[]}>("/api/admin/publish/history")]);
-   setData(layout);setDraft(clone(layout.draft));setHistory([clone(layout.draft)]);setCursor(0);setHistoryItems(pub.items);
+   const [layout,pub,widgetData]=await Promise.all([api.get<LayoutResponse>("/api/admin/layout"),api.get<{items:HistoryItem[]}>("/api/admin/publish/history"),api.get<{items:WidgetOption[]}>("/api/admin/widgets")]);
+   setData(layout);setDraft(clone(layout.draft));setHistory([clone(layout.draft)]);setCursor(0);setHistoryItems(pub.items);setWidgets(widgetData.items);
   }catch(e){setError(e instanceof ApiError?e.message:"Could not load the layout editor.");}
   finally{setLoading(false);}
  },[]);
