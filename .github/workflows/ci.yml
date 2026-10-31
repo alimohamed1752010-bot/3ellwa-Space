@@ -37,6 +37,9 @@ jobs:
       - name: Run web tests
         run: npm run test:web
 
+      - name: Check Worker integration script syntax
+        run: node --check scripts/part4-test.mjs
+
       - name: Build production web assets
         run: npm run build:web
 
