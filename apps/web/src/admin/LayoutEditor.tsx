@@ -18,7 +18,7 @@ const blank=(type:SectionType):Section=>({id:crypto.randomUUID(),type,title:"",b
 const clone=<T,>(value:T):T=>JSON.parse(JSON.stringify(value));
 const clean=(layout:LayoutData):LayoutData=>({sections:layout.sections.map(s=>({id:s.id,type:s.type,title:s.title,body:s.body,assetId:s.assetId,widgetId:s.widgetId,enabled:s.enabled,visibleDesktop:s.visibleDesktop,visibleMobile:s.visibleMobile}))});
 
-function SortableSection({section,index,total,onChange,onRemove,onImage}:{section:Section;index:number;onChange:(patch:Partial<Section>)=>void;onRemove:()=>void;onImage:()=>void}){
+function SortableSection({section,index,onChange,onRemove,onImage}:{section:Section;index:number;onChange:(patch:Partial<Section>)=>void;onRemove:()=>void;onImage:()=>void}){
  const {attributes,listeners,setNodeRef,transform,transition,isDragging}=useSortable({id:section.id});
  const style={transform:CSS.Transform.toString(transform),transition,opacity:isDragging ? 0.55 : 1};
  return <div ref={setNodeRef} style={style} className="rounded-card border border-line bg-surface p-4">
