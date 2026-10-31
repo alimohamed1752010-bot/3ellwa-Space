@@ -54,3 +54,5 @@ Settled choices. A new chat must not reopen these unless the owner asks.
 45. Image dimensions are read on the server from the file bytes (worker/lib/imageSize.ts), never trusted from the client.
 46. Client-side processing: single uploads open a crop editor (drag to position, zoom, aspect presets, max size, WebP/JPEG/PNG, quality); multi-file uploads are shrunk quietly (longer side 2560, WebP) only when over 300 KB and only if that makes the file smaller. GIFs are never re-encoded.
 47. MediaPicker (admin/media/MediaPicker.tsx) is the one way any screen chooses an existing image. Uploading inside the picker with exactly one file selects it immediately.
+
+41. Custom pages use draft/published section JSON. Only published pages with public visibility are served; hidden pages return 404. Page indexing defaults off, and public page metadata respects the per-page indexable setting. Navigation may target either a validated URL/path or a published public page; drafts and hidden pages cannot be selected.
