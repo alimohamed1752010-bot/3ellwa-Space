@@ -43,7 +43,7 @@ Standard CRUD plus search, filter, sort, and reorder where noted:
 - announcements and guestbook moderation: CRUD, approve, delete
 - site-settings: GET, PUT (SEO, privacy, robots, maintenance, retention). Search indexing defaults to disabled; robots.txt blocks crawling and sitemap.xml is unavailable until explicitly enabled.
 - publish: POST /api/admin/publish, GET /api/admin/publish/history
-- domains: GET /api/admin/domains returns the Cloudflare zone, DNS records, and Worker custom domains; GET /api/admin/domains/dns-check?hostname=<subdomain> checks A, AAAA, and CNAME answers through Cloudflare public DNS. The DNS-check endpoint is session-protected, accepts only subdomains inside the configured zone, and makes no DNS changes.
+- domains: GET /api/admin/domains returns the Cloudflare zone, DNS records, and Worker custom domains; GET /api/admin/domains/dns-check?hostname=<subdomain> checks A, AAAA, and CNAME answers through Cloudflare public DNS. DNS writes support only A, AAAA, and CNAME subdomain records: POST /api/admin/domains/records/preview accepts create/edit/delete plans and returns a two-minute HMAC confirmation token bound to the observed record snapshot; POST /api/admin/domains/records creates, PUT /api/admin/domains/records/:id edits, and DELETE /api/admin/domains/records/:id deletes with the matching token, expiry, and confirmName. The Worker re-reads Cloudflare state before every write. Apex, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. CF_API_TOKEN stays server-side and needs Zone Read, DNS Read, DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the account.
 
 ## Links (Part 3)
 Public:
