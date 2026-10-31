@@ -39,6 +39,14 @@ r=await call("POST",`/api/admin/widgets/${duplicate.id}/test-refresh`);check("wi
 r=await call("DELETE",`/api/admin/widgets/${duplicate.id}`);check("delete duplicate widget",r.status===200,r.status);
 r=await call("DELETE",`/api/admin/widgets/${created.id}`);check("delete original widget",r.status===200,r.status);
 await call("PUT","/api/admin/layout/draft",original);await call("POST","/api/admin/publish",{});
+const githubSave=await call("PUT","/api/admin/integrations/github",{enabled:false,config:{username:"octocat"}});
+check("save public GitHub integration settings",githubSave.status===200,githubSave.status);
+const githubPublic=await call("GET","/api/public/integrations/github/data");
+check("disabled integration data is not public",githubPublic.status===404,githubPublic.status);
+const badGithub=await call("PUT","/api/admin/integrations/github",{enabled:true,config:{username:"not a valid username"}});
+check("reject invalid GitHub username",badGithub.status===400,badGithub.status);
+const badMinecraft=await call("PUT","/api/admin/integrations/minecraft",{enabled:true,config:{address:"https://example.com"}});
+check("reject URL as Minecraft server address",badMinecraft.status===400,badMinecraft.status);
 await call("POST","/api/auth/logout",{});
 discord.close();
 console.log(failed===0?"\nAll Part 7 checks passed.":`\n${failed} Part 7 check(s) FAILED.`);
