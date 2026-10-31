@@ -1,9 +1,10 @@
 import {useEffect,useState} from "react";
+import type {ReactNode} from "react";
 import {Link,useParams} from "react-router-dom";
 import {api} from "../shared/api";
 import {Button,Card} from "../shared/ui";
 type Project={id:string;slug:string;name:string;description:string;logoUrl:string|null;coverUrl:string|null;websiteUrl:string|null;githubUrl:string|null;technologies:string[];category:string;status:string;startedOn:string|null;featured:boolean;links:{id:string;label:string;url:string}[];gallery:{id:string;url:string;caption:string}[]};
-function Frame({children}:{children:React.ReactNode}){return <main className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-16"><header className="flex items-center justify-between py-5"><Link to="/" className="text-sm text-muted hover:text-ink">← Home</Link><span className="text-xs tracking-wide text-muted">3ELLWA.SPACE</span></header>{children}</main>;}
+function Frame({children}:{children:ReactNode}){return <main className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-16"><header className="flex items-center justify-between py-5"><Link to="/" className="text-sm text-muted hover:text-ink">← Home</Link><span className="text-xs tracking-wide text-muted">3ELLWA.SPACE</span></header>{children}</main>;}
 function NotFound(){return <Frame><div className="grid min-h-[60vh] place-items-center text-center"><div><p className="font-mono text-sm text-accent-soft">404</p><h1 className="mt-2 text-2xl font-semibold">Project not found</h1><Link to="/projects" className="mt-4 inline-block text-sm text-accent-soft underline">Back to projects</Link></div></div></Frame>;}
 export default function ProjectsPage(){
  const {slug}=useParams();const [items,setItems]=useState<Project[]|null>(null);const [item,setItem]=useState<Project|null>(null);const [failed,setFailed]=useState(false);
