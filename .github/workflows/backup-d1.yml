@@ -53,27 +53,30 @@ jobs:
           api="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/export"
           auth=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
           response="$(curl --fail --silent --show-error -X POST "$api" "${auth[@]}" --data '{"output_format":"polling"}')"
+          jq -e '.success == true' <<< "$response" >/dev/null || {
+            jq -r '.errors // "D1 export request failed"' <<< "$response"
+            exit 1
+          }
           bookmark="$(jq -er '.result.at_bookmark' <<< "$response")"
-          complete=""
+          signed_url=""
+          export_name=""
           for attempt in $(seq 1 60); do
-            response="$(curl --fail --silent --show-error -X POST "$api" "${auth[@]}" --data "$(jq -nc --arg bookmark "$bookmark" '{output_format:"polling",current_bookmark:$bookmark}')")"
-            status="$(jq -er '.result.status' <<< "$response")"
-            if [[ "$status" == "complete" ]]; then
-              complete="$response"
-              break
-            fi
-            if [[ "$status" == "error" ]]; then
-              jq -r '.result.error // "D1 export failed"' <<< "$response"
+            response="$(curl --fail --silent --show-error -X POST "$api" "${auth[@]}" --data "$(jq -nc --arg bookmark "$bookmark" '{current_bookmark:$bookmark}')")"
+            jq -e '.success == true' <<< "$response" >/dev/null || {
+              jq -r '.errors // "D1 export polling failed"' <<< "$response"
               exit 1
+            }
+            signed_url="$(jq -r '.result.signed_url // empty' <<< "$response")"
+            export_name="$(jq -r '.result.filename // empty' <<< "$response")"
+            if [[ -n "$signed_url" && -n "$export_name" ]]; then
+              break
             fi
             sleep 10
           done
-          if [[ -z "$complete" ]]; then
-            echo "::error::D1 export did not complete within the polling window."
+          if [[ -z "$signed_url" || -z "$export_name" ]]; then
+            echo "::error::D1 export did not provide a signed URL within the polling window."
             exit 1
           fi
-          signed_url="$(jq -er '.result.result.signed_url' <<< "$complete")"
-          export_name="$(jq -er '.result.result.filename' <<< "$complete")"
           curl --fail --silent --show-error "$signed_url" -o "$export_name"
           test -s "$export_name"
           gzip -9 "$export_name"
