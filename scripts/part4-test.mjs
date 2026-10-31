@@ -228,11 +228,15 @@ let publicProjects = await (await fetch(base + "/api/public/projects")).json();
 check("public projects list includes visible project", publicProjects.items.some((x) => x.id === project.id));
 let publicProject = await fetch(base + "/api/public/projects/" + project.slug);
 let publicProjectData = (await publicProject.json()).item;
-check("public project detail includes links, gallery, and description", publicProject.status === 200 && publicProjectData?.description === "A test project" && publicProjectData.links[0]?.url === "https://example.com" && publicProjectData.gallery[0]?.caption === "Project screenshot");\ncheck("public projects shell resolves the showcase route", (await fetch(base + "/projects")).status === 200);\ncheck("public projects shell resolves project detail route", (await fetch(base + "/projects/" + project.slug)).status === 200);\nconst projectUsage = await (await call("GET", `/api/admin/media/${projectImage.asset.id}/usage`)).json();\ncheck("media usage identifies project and gallery references", projectUsage.usage.some(x => x.type === "project") && projectUsage.usage.some(x => x.type === "gallery"));
+check("public project detail includes links, gallery, and description", publicProject.status === 200 && publicProjectData?.description === "A test project" && publicProjectData.links[0]?.url === "https://example.com" && publicProjectData.gallery[0]?.caption === "Project screenshot");
+check("public projects shell resolves the showcase route", (await fetch(base + "/projects")).status === 200);
+check("public projects shell resolves project detail route", (await fetch(base + "/projects/" + project.slug)).status === 200);\nconst projectUsage = await (await call("GET", `/api/admin/media/${projectImage.asset.id}/usage`)).json();
+check("media usage identifies project and gallery references", projectUsage.usage.some(x => x.type === "project") && projectUsage.usage.some(x => x.type === "gallery"));
 projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...projectBody, name: "Updated " + tag, visible: false });
 project = (await projectResponse.json()).item;
 publicProjects = await (await fetch(base + "/api/public/projects")).json();
-check("hidden project is omitted from public list", projectResponse.status === 200 && !publicProjects.items.some((x) => x.id === project.id));\ncheck("hidden project detail shell returns 404", (await fetch(base + "/projects/" + project.slug)).status === 404);
+check("hidden project is omitted from public list", projectResponse.status === 200 && !publicProjects.items.some((x) => x.id === project.id));
+check("hidden project detail shell returns 404", (await fetch(base + "/projects/" + project.slug)).status === 404);
 projectResponse = await call("POST", "/api/admin/projects", { ...projectBody, name: "Collision " + tag });
 check("duplicate project slug is refused", projectResponse.status === 409, projectResponse.status);
 projectResponse = await call("POST", `/api/admin/projects/${project.id}/duplicate`);
@@ -242,7 +246,8 @@ projectResponse = await call("DELETE", `/api/admin/projects/${copiedProject.id}`
 check("delete duplicated project", projectResponse.status === 200, projectResponse.status);
 projectResponse = await call("DELETE", `/api/admin/projects/${project.id}`);
 check("delete project", projectResponse.status === 200, projectResponse.status);
-check("deleted project disappears publicly", (await fetch(base + "/api/public/projects/" + projectBody.slug)).status === 404);\nawait call("DELETE", `/api/admin/media/${projectImage.asset.id}`);
+check("deleted project disappears publicly", (await fetch(base + "/api/public/projects/" + projectBody.slug)).status === 404);
+await call("DELETE", `/api/admin/media/${projectImage.asset.id}`);
 
 check("cross-origin POST refused (403)", (await fetch(base + "/api/admin/media/folders", { method: "POST", headers: { ...H, origin: "https://evil.example" }, body: JSON.stringify({ name: "x" }) })).status === 403);
 
