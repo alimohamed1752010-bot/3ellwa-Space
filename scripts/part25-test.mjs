@@ -1,6 +1,6 @@
 import http from "node:http";
 // LOCAL ONLY test of Part 2.5 routes (profile, social links, navigation, media, public site).
-// 1) .dev.vars needs mandatory Discord OTP and a hash of the test password (the password is still required)
+// 1) .dev.vars needs ADMIN_PASSWORD and DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook
 // 2) npm run db:migrate:local && npm run dev   (other terminal; use a fresh local DB for the empty-site check)
 // 3) node scripts/part25-test.mjs [baseUrl] "test password"
 const base = (process.argv[2] ?? "http://localhost:8787").replace(/\/$/, "");
