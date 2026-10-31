@@ -73,3 +73,5 @@ Settled choices. A new chat must not reopen these unless the owner asks.
 55. Part 10 public NS diagnostics query the configured zone through Cloudflare Public DNS and compare the recursive resolver answer with the nameservers assigned by Cloudflare. The UI must describe this as resolver-visible NS data, not registrar parent-zone delegation or a global propagation guarantee.
 
 56. DNS changes made through the domain manager are recorded in an append-only D1 audit table with before/after snapshots. The audit is not a complete Cloudflare account history: edits made outside this app are not captured. A successful Cloudflare write is never represented as failed solely because the subsequent audit insert failed; the API returns `auditRecorded: false` and the UI warns the owner.
+
+57. Project delivery uses coherent milestone-sized changes with integrated UI/API/schema/tests/docs and deployment verification. This supersedes the earlier preference for tiny per-substep handoffs; do not split work into artificial micro-checkpoints.
