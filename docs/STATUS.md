@@ -9,11 +9,12 @@ Last reconciled: 2026-10-31
 - Latest GitHub CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) completed successfully on commit `7336adcccbde4b9db263a537fbd2677ab3601135`; both typecheck/web/build and local Worker integration jobs passed.
 - Cloudflare Worker: `3ellwa-space`; deployment `d8df80b6-d7f3-4c3a-a2b1-1062044993d8`, version `f3adfe8b-854c-4ad8-b097-52c590b27e74` (version 171), assigned 100% traffic at 16:27 UTC on 2026-10-31.
 - Cron Trigger: `0 * * * *` (hourly UTC).
-- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet.
+- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
 - Public domain: https://3ellwa.space.
 - Separate private R2 backup bucket: `3ellwa-space-backups`. It currently contains no objects under `d1/` or `media/`.
 - Production backup workflow is committed but no successful backup has been verified. The four GitHub Actions secrets in `docs/BACKUP.md` remain required.
 - Full authenticated browser/visual acceptance has not been completed.
+- A manual-only GitHub Actions deployment fallback was added at `.github/workflows/deploy.yml`; it runs typecheck, web tests, build, then deploy. It has not been run and requires the repository `CF_API_TOKEN` secret. Normal Cloudflare Workers Builds remains the documented push-to-main deployment path.
 
 ## Latest checkpoint
 
