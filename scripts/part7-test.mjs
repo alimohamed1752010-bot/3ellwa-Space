@@ -23,6 +23,18 @@ const H={...headers,cookie};
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
 const get=async path=>(await call("GET",path)).json();
 const analytics=await call("GET","/api/admin/analytics/summary?days=7");const analyticsData=await analytics.json();check("analytics summary includes the tracked page view",analytics.status===200&&analyticsData.summary.views>=1,analytics.status);
+const guestSubmit=await fetch(base+"/api/public/guestbook",{method:"POST",headers,body:JSON.stringify({name:"Test visitor",message:"Guestbook integration test."})});const guestSubmitData=await guestSubmit.json();
+check("public guestbook accepts a submission for moderation",guestSubmit.status===202&&guestSubmitData.ok,guestSubmit.status);
+const pendingGuest=await call("GET","/api/admin/guestbook?status=pending");const pendingData=await pendingGuest.json();const guestEntry=pendingData.items?.find(x=>x.message==="Guestbook integration test.");
+check("new guestbook entry is pending and visible to admin",pendingGuest.status===200&&!!guestEntry, pendingGuest.status);
+const publicPending=await call("GET","/api/public/guestbook");const publicPendingData=await publicPending.json();
+check("pending guestbook entries stay private",publicPending.status===200&&!publicPendingData.items?.some(x=>x.id===guestEntry?.id),publicPending.status);
+const approveGuest=await call("PUT",`/api/admin/guestbook/${guestEntry?.id}/status`,{status:"approved"});
+check("admin can approve a guestbook entry",approveGuest.status===200,approveGuest.status);
+const publicApproved=await call("GET","/api/public/guestbook");const publicApprovedData=await publicApproved.json();
+check("approved guestbook entry appears publicly",publicApproved.status===200&&publicApprovedData.items?.some(x=>x.id===guestEntry?.id),publicApproved.status);
+if(guestEntry?.id){const deleteGuest=await call("DELETE",`/api/admin/guestbook/${guestEntry.id}`);check("admin can delete a guestbook entry",deleteGuest.status===200,deleteGuest.status);}
+
 
 const originalRaw=(await get("/api/admin/layout")).published;
 const original={sections:originalRaw.sections.map(x=>({id:x.id,type:x.type,title:x.title,body:x.body,assetId:x.assetId,widgetId:x.widgetId,enabled:x.enabled,visibleDesktop:x.visibleDesktop,visibleMobile:x.visibleMobile}))};
