@@ -97,7 +97,7 @@ Admin routes require the owner session:
 - PUT /api/admin/widgets/:id -> { item }, same body as create.
 - PUT /api/admin/widgets/order { ids } -> { items }.
 - POST /api/admin/widgets/:id/duplicate -> 201 { item }; duplicate is disabled by default.
-- POST /api/admin/widgets/:id/test-refresh -> { ok, item }. Currently records a test-refresh timestamp and cached configuration; it does not fetch third-party data.
+- POST /api/admin/widgets/:id/test-refresh -> { ok, item }. Records a test-refresh timestamp for the widget itself; connected provider data is refreshed through the Integrations screen test action and hourly background refresh.
 - DELETE /api/admin/widgets/:id -> { ok }.
 - Invalid timezone or type-specific config returns 400 invalid_widget_config.
 
@@ -105,7 +105,7 @@ Public:
 - GET /api/public/widgets/:id/data -> { widget } for enabled widgets only; disabled and unknown widgets both return 404. The response contains only display-safe configuration, not integration credentials. For GitHub/Minecraft widget types, it also includes integrationData from the matching enabled, successfully tested integration cache.
 - Public homepage layout sections of type widget use widgetId to render the selected widget.
 - Built-in widget rendering: text, clock, countdown, quote, GitHub profile, and Minecraft server status. Widget visibility on desktop/mobile is controlled by its homepage layout section and the widget's own visibility settings.
-- Third-party integrations, scheduled refresh, and credential storage are not part of checkpoint 1.
+- Third-party provider data is described below. No OAuth/private credentials are collected in this phase.
 
 
 ## Integrations (Part 7 checkpoint 2)
@@ -114,9 +114,19 @@ Admin (session required):
 - GET /api/admin/integrations -> { items } for configured integrations. Each item contains id, provider, enabled, config, status, lastCheckedAt, lastError and cacheUpdatedAt. No credentials are returned.
 - PUT /api/admin/integrations/github { enabled, config: { username } } -> { item }. Username is validated and must be a public GitHub account name.
 - PUT /api/admin/integrations/minecraft { enabled, config: { address } } -> { item }. Address accepts a hostname with optional port, not a URL.
-- POST /api/admin/integrations/:provider/test -> { ok, item, preview }. Server-side fetches use fixed provider endpoints and a timeout; successful responses are normalized and cached in config_json. Failures update status and lastError.
-- Supported providers currently: github, minecraft. No OAuth/private credentials are collected or stored in this checkpoint.
+- POST /api/admin/integrations/:provider/test -> { ok, item, preview }. Server-side fetches use fixed provider endpoints and a timeout; successful responses are normalized and cached in config_json. A failed refresh records lastError while preserving the previous successful snapshot when one exists.
+- Supported providers currently: github, minecraft. No OAuth/private credentials are collected or stored for these public-data providers.
 
 Public:
-- GET /api/public/integrations/:provider/data -> { provider, data, updatedAt } only when the integration is enabled and has a successful cached result. Disabled, unconfigured, failed, or unknown integrations return 404.
+- GET /api/public/integrations/:provider/data -> { provider, data, updatedAt } only when the integration is enabled and has a successful cached result. Disabled, unconfigured, uncached, or unknown integrations return 404. A transient refresh failure does not hide an existing successful cache.
 - Public snapshots contain only normalized profile or server-status fields. Provider settings and credentials are never included.
+
+
+## Scheduled integration refresh (Part 7 checkpoint 4)
+
+- Cloudflare Cron Trigger: `0 * * * *` (hourly, UTC).
+- The Worker's scheduled handler refreshes only enabled GitHub and Minecraft integrations, sequentially, using fixed provider endpoints and a seven-second request timeout.
+- Successful refreshes replace the normalized public snapshot and update `cacheUpdatedAt`.
+- A failed refresh records `lastError` and the last attempt time. If a previous successful cache exists, its status remains usable and the stale snapshot stays public; the freshness timestamp continues to reflect the last successful refresh.
+- Public integration data and GitHub/Minecraft widgets include the last successful snapshot timestamp. Widgets display its age.
+- Disabled integrations are not fetched by the scheduled handler.
