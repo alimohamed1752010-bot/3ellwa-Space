@@ -1,5 +1,5 @@
 // LOCAL ONLY full auth test with a fake Discord. Not for production.
-// 1) .dev.vars must contain: DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook and a hash of the test password
+// 1) .dev.vars must contain: ADMIN_PASSWORD="test password" and DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook
 // 2) npm run dev   (in another terminal)
 // 3) node scripts/auth-flow-test.mjs [baseUrl] "test password"
 import http from "node:http";
