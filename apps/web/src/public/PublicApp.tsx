@@ -8,6 +8,7 @@ import LocalTime from "./LocalTime";
 import TypingSubtitle from "./TypingSubtitle";
 import { useLinks } from "./useLinks";
 import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
+import { api } from "../shared/api";
 import type { PublicSite } from "./useSite";
 
 function Orb() {
@@ -72,13 +73,10 @@ const DOT = { online: "bg-ok", offline: "bg-muted" } as const;
 
 function ProfileView({ site }: { site: PublicSite }) {
   const p = site.profile;
-  const links = useLinks(); // a failed or empty links request just shows nothing
   useEffect(() => { document.title = site.site.title; }, [site.site.title]);
   const name = p.displayName || p.username || "";
   return (
-    <div className="min-h-screen pb-16">
-      <Menu items={site.navigation} />
-      <main className="mx-auto w-full max-w-2xl px-4 pt-6">
+      <main className="mx-auto w-full max-w-2xl px-4">
         <Card className="rise overflow-hidden">
           <div className="aspect-[3/1] w-full bg-gradient-to-br from-accent-strong/30 via-raised to-surface">
             {p.bannerUrl && <img src={p.bannerUrl} alt="" className="size-full object-cover" />}
@@ -136,17 +134,36 @@ function ProfileView({ site }: { site: PublicSite }) {
           </div>
         </Card>
       </main>
-      {links.status === "ready" && links.data && <LinksSection data={links.data} />}
-    </div>
   );
+}
+
+function ProjectsHomeSection({title}:{title:string}) {
+  const [items,setItems]=useState<Array<{id:string;slug:string;name:string;description:string;coverUrl:string|null;logoUrl:string|null;category:string;featured:boolean}>>([]);
+  useEffect(()=>{let live=true;api.get<{items:typeof items}>("/api/public/projects").then(r=>{if(live)setItems(r.items.slice(0,4));}).catch(()=>{if(live)setItems([]);});return()=>{live=false;};},[]);
+  if(!items.length)return null;
+  return <section><h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted">{title||"Projects"}</h2><div className="grid gap-3 sm:grid-cols-2">{items.map(p=><Link key={p.id} to={"/projects/"+p.slug} className="overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-accent/60"><div className="aspect-[16/7] bg-raised">{p.coverUrl?<img src={p.coverUrl} alt="" loading="lazy" className="size-full object-cover"/>:p.logoUrl?<div className="grid size-full place-items-center"><img src={p.logoUrl} alt="" className="size-14 rounded-xl object-cover"/></div>:null}</div><div className="p-4"><p className="text-[11px] uppercase tracking-wider text-accent-soft">{p.category}</p><h3 className="mt-1 text-sm font-medium">{p.name}</h3><p className="mt-1 line-clamp-2 text-xs text-muted">{p.description}</p></div></Link>)}</div><Link to="/projects" className="mt-3 inline-block text-sm text-accent-soft underline-offset-4 hover:underline">All projects →</Link></section>;
 }
 
 function Home() {
   const s = usePublicSite();
+  const links = useLinks();
   if (s.status === "loading") return <Spinner />;
   if (s.status === "error" || !s.data) return <SiteError retry={s.retry} />;
   if (isEmptySite(s.data)) return <EmptyState />;
-  return <ProfileView site={s.data} />;
+  const sections=s.data.layout?.sections??[{id:"profile",type:"profile",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true,imageUrl:null},{id:"links",type:"links",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true,imageUrl:null}];
+  return <div className="min-h-screen pb-16"><Menu items={s.data.navigation}/><main className="mx-auto flex w-full flex-col gap-[var(--3w-spacing)] px-4 pt-6" style={{maxWidth:"var(--3w-container-width)"}}>
+    {sections.filter(x=>x.enabled).map(section=>{
+      const visibility=`${section.visibleMobile?"":"hidden md:block"} ${section.visibleDesktop?"":"md:hidden"}`;
+      if(section.type==="profile")return <div key={section.id} className={visibility}><ProfileView site={s.data!}/></div>;
+      if(section.type==="links")return <div key={section.id} className={visibility}>{links.status==="ready"&&links.data&&<LinksSection data={links.data}/>}</div>;
+      if(section.type==="projects")return <div key={section.id} className={visibility}><ProjectsHomeSection title={section.title}/></div>;
+      if(section.type==="text")return <section key={section.id} className={visibility}><Card className="p-5"><h2 className="mb-2 text-sm font-medium">{section.title||"About"}</h2><p className="whitespace-pre-wrap text-sm leading-7 text-muted">{section.body}</p></Card></section>;
+      if(section.type==="gallery")return section.imageUrl?<figure key={section.id} className={visibility}><Card className="overflow-hidden"><img src={section.imageUrl} alt={section.title} loading="lazy" className="max-h-[36rem] w-full object-cover"/>{section.title&&<figcaption className="p-3 text-xs text-muted">{section.title}</figcaption>}{section.body&&<p className="px-3 pb-3 text-sm text-muted">{section.body}</p>}</Card></figure>:null;
+      if(section.type==="spacer")return <div key={section.id} aria-hidden className={visibility} style={{height:Math.min(400,Math.max(0,Number(section.body)||32))}}/>;
+      if(section.type==="widget")return <section key={section.id} className={visibility}><Card className="p-5"><h2 className="text-sm font-medium">{section.title||"Widget"}</h2><p className="mt-2 text-xs text-muted">{section.body||"This widget has not been configured yet."}</p></Card></section>;
+      return null;
+    })}
+  </main></div>;
 }
 
 function NotFound() {
