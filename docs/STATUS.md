@@ -14,7 +14,7 @@ Last reconciled: 2026-10-31
 - Separate private R2 backup bucket: `3ellwa-space-backups`. It currently contains no objects under `d1/` or `media/`.
 - Production backup workflow is committed but no successful backup has been verified. The four GitHub Actions secrets in `docs/BACKUP.md` remain required.
 - Full authenticated browser/visual acceptance has not been completed.
-- A manual-only GitHub Actions deployment fallback was added at `.github/workflows/deploy.yml`; it runs typecheck, web tests, build, then deploy. It has not been run and requires the repository `CF_API_TOKEN` secret. Normal Cloudflare Workers Builds remains the documented push-to-main deployment path.
+- A manual-only GitHub Actions deployment fallback is available at `.github/workflows/deploy.yml`; it runs typecheck, web tests, build, local D1 migrations, and the Worker auth/integration scripts before deploying. It has not been run and requires repository secret `CF_API_TOKEN`. Normal Cloudflare Workers Builds remains the documented push-to-main deployment path.
 
 ## Latest checkpoint
 
@@ -39,6 +39,7 @@ Last reconciled: 2026-10-31
 ## Remaining acceptance work
 
 - Add `CF_API_TOKEN` as a Worker secret with Zone Read and DNS Read scoped to the `3ellwa.space` zone, plus Workers Scripts Read scoped to the account. The connected Cloudflare authorization cannot create API tokens, so this requires a user-created token.
+- Add the GitHub Actions `CF_API_TOKEN` secret for the manual deploy fallback with Workers Scripts Edit and the D1/R2 read permissions Wrangler needs to resolve the configured bindings. Keep this separate from the Worker runtime token where narrower scopes are appropriate.
 - Add the four GitHub Actions backup secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify both D1 and media objects in the private bucket.
 - Perform a restore drill against a disposable D1 database only.
 - Complete authenticated desktop/mobile visual acceptance, safe media upload/selection, layout loading, public page/project routes, and a real configured integration refresh.
