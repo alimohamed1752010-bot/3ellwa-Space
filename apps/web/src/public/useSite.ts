@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { applyThemeTokens, type PublicTheme } from "../shared/theme";
 import { api } from "../shared/api";
 
 export interface PublicSite {
@@ -13,6 +15,7 @@ export interface PublicSite {
   social: Array<{ id: string; platform: string; label: string | null; url: string; icon: string | null }>;
   navigation: Array<{ id: string; label: string; href: string; newTab: boolean }>;
   site: { title: string };
+  theme: PublicTheme;
 }
 
 export function useSite() {
@@ -29,4 +32,23 @@ export function useSite() {
 export function isEmptySite(s: PublicSite): boolean {
   const p = s.profile;
   return !(p.displayName || p.username || p.shortBio || p.extendedBio || p.statusText || p.avatarUrl || p.bannerUrl || p.subtitles.length || p.badges.length || s.social.length || s.navigation.length);
+}
+
+type SiteState=ReturnType<typeof useSite>;
+const SiteContext=createContext<SiteState|null>(null);
+
+export function PublicSiteProvider({children}:{children:ReactNode}){
+ const state=useSite();
+ useEffect(()=>{if(state.status==="ready"&&state.data)applyThemeTokens(state.data.theme.tokens);},[state.status,state.data]);
+ const bg=state.status==="ready"?state.data?.theme.tokens.background:null;
+ return <SiteContext.Provider value={state}>
+  {bg?.mode==="video"&&bg.assetUrl&&<video id="theme-background-video" aria-hidden autoPlay muted loop playsInline src={bg.assetUrl} />}
+  {children}
+ </SiteContext.Provider>;
+}
+
+export function usePublicSite(){
+ const state=useContext(SiteContext);
+ if(!state)throw new Error("usePublicSite must be used inside PublicSiteProvider.");
+ return state;
 }
