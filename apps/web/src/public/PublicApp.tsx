@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { Button, Card } from "../shared/ui";
 import LinksPage, { LinksSection } from "./LinksPage";
 import PublicPage from "../PublicPage";
+import ProjectsPage from "./ProjectsPage";
 import LocalTime from "./LocalTime";
 import TypingSubtitle from "./TypingSubtitle";
 import { useLinks } from "./useLinks";
@@ -169,6 +170,8 @@ export default function PublicApp() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/links" element={<LinksPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:slug" element={<ProjectsPage />} />
         <Route path="/:slug" element={<PublicPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
