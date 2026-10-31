@@ -41,7 +41,7 @@ Standard CRUD plus search, filter, sort, and reorder where noted:
 - media and folders: upload, list, rename, move, replace, delete
 - analytics: summary, timeseries, top pages, top links, referrers, devices, export, purge
 - announcements and guestbook moderation: CRUD, approve, delete
-- site-settings: GET, PUT (SEO, privacy, robots, maintenance, retention). Search indexing defaults to disabled; robots.txt blocks crawling and sitemap.xml is unavailable until explicitly enabled.
+- site-settings: GET, PUT (SEO, privacy, robots, maintenance, retention). Search indexing defaults to disabled. While disabled, robots.txt permits crawlers to fetch public pages so they can observe the noindex response, but disallows /api/ and /admin/; sitemap.xml is unavailable.
 - publish: POST /api/admin/publish, GET /api/admin/publish/history
 - domains: GET /api/admin/domains returns the Cloudflare zone, DNS records, and Worker custom domains; GET /api/admin/domains/dns-check?hostname=<subdomain> checks A, AAAA, and CNAME answers through Cloudflare public DNS. DNS writes support only A, AAAA, and CNAME subdomain records: POST /api/admin/domains/records/preview accepts create/edit/delete plans and returns a two-minute HMAC confirmation token bound to the observed record snapshot; POST /api/admin/domains/records creates, PUT /api/admin/domains/records/:id edits, and DELETE /api/admin/domains/records/:id deletes with the matching token, expiry, and confirmName. The Worker re-reads Cloudflare state before every write. Apex, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. CF_API_TOKEN stays server-side and needs Zone Read, DNS Read, DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the account.
 
@@ -161,7 +161,7 @@ Public:
 
 Admin (session required):
 - GET /api/admin/seo-privacy -> { settings: { indexingEnabled, siteTitle, siteDescription } }.
-- PUT /api/admin/seo-privacy accepts the same settings object. Public indexing defaults to enabled; disabling it adds noindex directives and blocks crawling in robots.txt.
+- PUT /api/admin/seo-privacy accepts the same settings object. Public indexing defaults to disabled. When enabled, public pages may be indexed and the sitemap is advertised. When disabled, public pages return noindex directives; robots.txt allows public crawling to expose those directives while disallowing /api/ and /admin/.
 
 Public:
 - /robots.txt reflects the site-wide indexing preference and advertises the sitemap when enabled.
