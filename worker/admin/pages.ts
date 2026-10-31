@@ -6,7 +6,7 @@ import { apiError } from "../lib/http";
 import { parseBody } from "../lib/validate";
 
 export const pageRoutes = new Hono<AppEnv>();
-const reserved = new Set(["links", "go", "api", "media", "admin", "robots.txt", "sitemap.xml"]);
+const reserved = new Set(["links", "go", "projects", "api", "media", "admin", "robots.txt", "sitemap.xml"]);
 const slug = z.string().trim().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).refine((s) => !reserved.has(s) && !s.startsWith("go-"), "This URL is reserved or invalid.");
 const block = z.object({ id: z.string().max(100).optional(), type: z.enum(["text","links","projects","gallery","timeline","embed"]), title: z.string().max(120).default(""), body: z.string().max(20000).default(""), url: z.string().max(2000).default(""), assetId: z.string().max(100).default("") });
 const draftSchema = z.object({ title: z.string().trim().min(1).max(120), slug, metaTitle: z.string().max(120).default(""), metaDescription: z.string().max(300).default(""), visibility: z.enum(["public","hidden"]).default("public"), indexable: z.boolean().default(false), sections: z.array(block).max(50) });
