@@ -5,8 +5,8 @@ Last reconciled: 2026-10-31
 ## Current verified state
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
-- Latest application commit at reconciliation: `13139d51f0e149047d7f373105787cfc248ad3b6` (Part 7 widget framework and test suite).
-- Latest CI run for Part 7: [41205513297](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41205513297), queued at last check; do not mark the checkpoint complete until it passes.
+- Part 7 implementation commit: `97371cf2ec4df737441b5077df79d9e56bf2b999`.
+- Part 7 CI: [41205624216](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41205624216), completed successfully. Typecheck, web tests, production asset build, and local Worker integration tests all passed.
 - Cloudflare Worker: `3ellwa-space`; latest deployment is Worker version **116**, deployment `71d2f20f-9323-4d07-bd2f-bc98aece7b7e`, with **100% traffic** assigned to version `75eb182a-a546-45c0-9d8b-61852c62e890`.
 - The deployed version has the expected bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, and secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, `DISCORD_AUTH_WEBHOOK_URL`.
 - Production D1 database: `3ellwa-space-db`. Migrations `0001_init.sql`, `0002_theme_presets.sql`, and `0003_layout_publishing.sql` are applied. The Part 6 `homepage_layout` setting and `publish_history` table were verified after applying migration 0003.
@@ -26,9 +26,9 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
-- Part 6 CI passed on commit `6f521d439352115ef379dbbc40ff0e043a38d02c`. Part 7 verification is pending run [41205513297](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41205513297).
-- The Part 6 and Part 7 integration suites are included in CI. Part 7 tests use local D1 only.
-- Production deployment inspection confirms version 116 is assigned 100% traffic and contains the expected bindings. Part 7 changes are committed to GitHub but are not yet deployed to production.
+- Part 6 CI passed on commit `6f521d439352115ef379dbbc40ff0e043a38d02c`. Part 7 CI run [41205624216](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41205624216) passed, including the local widget integration suite.
+- The Part 6 and Part 7 integration suites are included in CI. Part 7 tests use local D1 only and all checks passed.
+- Production deployment inspection confirms version 116 is assigned 100% traffic and contains the expected bindings. Part 7 changes are committed to GitHub but are not yet deployed to production. Worker version 116 remains the active 100% production version.
 - The remote Part 6 D1 migration and the layout/publish-history queries were verified directly.
 - Do not run destructive integration suites against production. Integration tests that create/delete content must use isolated local D1/R2.
 - The authenticated admin UI and real desktop/mobile visual behavior still need a browser acceptance pass. The public domain fetch could not be independently completed by the available web viewer, so do not claim a full live-site browser test.
@@ -43,7 +43,7 @@ Last reconciled: 2026-10-31
 
 ## Next
 
-- Part 7 checkpoint 2: add integration connection/status management with encrypted write-only credentials, then one provider at a time. Add scheduled refresh and real external data providers; current built-in widget refresh only records a test-refresh timestamp.
+- Part 7 checkpoint 2: add integration connection/status management with encrypted write-only credentials, then one provider at a time. Add scheduled refresh and real external data providers; current built-in widget test-refresh only records a timestamp and cached configuration.
 - Part 7 integrations in scope: GitHub, Steam, Spotify, Discord presence (Lanyard unless changed by the owner), Minecraft server status. Built-in widgets currently include text, clock, countdown and quote. Avoid arbitrary HTML/embed execution.
 - Keep credentials write-only in admin APIs, encrypt stored credentials with the existing `ENCRYPTION_KEY` secret, and never return secrets to the frontend.
 - Part 8: analytics, guestbook, privacy/SEO and optional extras.
