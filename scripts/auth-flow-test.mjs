@@ -60,4 +60,5 @@ check("429 has Retry-After", Number(r.headers.get("retry-after")) > 0);
 r = await fetch(base + "/api/auth/password", { method: "POST", headers: { "content-type": "application/json", origin: "https://evil.example" }, body: JSON.stringify({ password: PASSWORD }) });
 check("cross-origin POST refused", r.status === 403, r.status);
 
+discordServer.close();
 console.log(failed ? `\n${failed} check(s) failed` : "\nAll checks passed"); process.exit(failed ? 1 : 0);
