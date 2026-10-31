@@ -1,0 +1,44 @@
+import http from "node:http";
+// LOCAL ONLY Part 7 integration test. Uses local D1 and a fake Discord webhook.
+// node scripts/part7-test.mjs [baseUrl] "test password"
+const base=(process.argv[2]??"http://localhost:8787").replace(/\/$/,"");
+const PASSWORD=process.argv[3];
+if(!PASSWORD){console.error('Usage: node scripts/part7-test.mjs http://127.0.0.1:8787 "test password"');process.exit(1);}
+const messages=[];
+const discord=http.createServer((req,res)=>{let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{messages.push(JSON.parse(body).content??"");}catch{}res.writeHead(204).end();});});
+await new Promise(resolve=>discord.listen(9999,"127.0.0.1",resolve));
+const waitCode=async()=>{for(let i=0;i<30;i++){const code=messages.at(-1)?.match(/\*\*(\d{8})\*\*/)?.[1];if(code)return code;await new Promise(r=>setTimeout(r,100));}throw new Error("No Discord OTP received.");};
+let failed=0;
+const check=(name,ok,detail="")=>{console.log(`${ok?"PASS":"FAIL"}  ${name}${detail!==""?" ("+detail+")":""}`);if(!ok)failed++;};
+const headers={"content-type":"application/json","cf-connecting-ip":"10.9.0.7"};
+let r=await fetch(base+"/api/health");check("Worker is ready",r.status===200,r.status);
+r=await fetch(base+"/api/auth/password",{method:"POST",headers,body:JSON.stringify({password:PASSWORD})});const challenge=await r.json();const code=await waitCode();
+const verified=await fetch(base+"/api/auth/code",{method:"POST",headers,body:JSON.stringify({challengeId:challenge.challengeId,code})});
+const cookie=(verified.headers.get("set-cookie")??"").split(";")[0];check("password plus Discord OTP creates a session",verified.status===200&&!!cookie,verified.status);
+const H={...headers,cookie};
+const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
+const get=async path=>(await call("GET",path)).json();
+const original=(await get("/api/admin/layout")).published;
+const tag=Date.now().toString(36);
+const body={name:"Part 7 "+tag,type:"text",enabled:true,displayMode:"card",visibleDesktop:true,visibleMobile:true,refreshSeconds:300,config:{text:"Widget framework integration test."}};
+r=await call("POST","/api/admin/widgets",body);let created=(await r.json()).item;
+check("create a text widget",r.status===201&&!!created?.id,r.status);
+let publicData=await call("GET",`/api/public/widgets/${created.id}/data`);let payload=await publicData.json();
+check("enabled widget exposes only its public configuration",publicData.status===200&&payload.widget.config.text===body.config.text&&payload.widget.name===body.name,publicData.status);
+const layout={sections:[...original.sections.filter(s=>s.type!=="widget"),{id:"part7-"+tag,type:"widget",title:"Test widget",body:"",assetId:null,widgetId:created.id,enabled:true,visibleDesktop:true,visibleMobile:true}]};
+r=await call("PUT","/api/admin/layout/draft",layout);check("layout draft accepts a valid widget reference",r.status===200,r.status);
+r=await call("POST","/api/admin/publish",{});check("widget section publishes through unified publishing",r.status===200,r.status);
+const site=await get("/api/public/site");check("public homepage contains the configured widget section",site.layout.sections.some(s=>s.widgetId===created.id));
+const update={...body,enabled:false};
+r=await call("PUT",`/api/admin/widgets/${created.id}`,update);check("disable widget",r.status===200,r.status);
+publicData=await call("GET",`/api/public/widgets/${created.id}/data`);check("disabled widget data is private",publicData.status===404,publicData.status);
+r=await call("POST",`/api/admin/widgets/${created.id}/duplicate`);const duplicate=(await r.json()).item;
+check("duplicate widget starts disabled",r.status===201&&duplicate?.enabled===false,r.status);
+r=await call("POST",`/api/admin/widgets/${duplicate.id}/test-refresh`);check("widget refresh endpoint updates cached metadata",r.status===200,r.status);
+r=await call("DELETE",`/api/admin/widgets/${duplicate.id}`);check("delete duplicate widget",r.status===200,r.status);
+r=await call("DELETE",`/api/admin/widgets/${created.id}`);check("delete original widget",r.status===200,r.status);
+await call("PUT","/api/admin/layout/draft",original);await call("POST","/api/admin/publish",{});
+await call("POST","/api/auth/logout",{});
+discord.close();
+console.log(failed===0?"\nAll Part 7 checks passed.":`\n${failed} Part 7 check(s) FAILED.`);
+process.exit(failed===0?0:1);
