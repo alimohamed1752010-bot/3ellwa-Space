@@ -27,6 +27,11 @@ const verified=await fetch(base+"/api/auth/code",{method:"POST",headers,body:JSO
 const cookie=(verified.headers.get("set-cookie")??"").split(";")[0];check("password plus Discord OTP creates a session",verified.status===200&&!!cookie,verified.status);
 const H={...headers,cookie};
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
+const unauthDns=await fetch(base+"/api/admin/domains/dns-check?hostname=www.3ellwa.space");
+check("domain DNS diagnostics require an admin session",unauthDns.status===401,unauthDns.status);
+const invalidDns=await call("GET","/api/admin/domains/dns-check?hostname=attacker.example");
+const invalidDnsData=await invalidDns.json();
+check("domain DNS diagnostics reject hostnames outside the configured zone",invalidDns.status===400&&invalidDnsData.error?.code==="invalid_hostname",invalidDns.status);
 const get=async path=>(await call("GET",path)).json();
 const analytics=await call("GET","/api/admin/analytics/summary?days=7");const analyticsData=await analytics.json();check("analytics summary includes the tracked page view",analytics.status===200&&analyticsData.summary.views>=1,analytics.status);
 const guestSubmit=await fetch(base+"/api/public/guestbook",{method:"POST",headers,body:JSON.stringify({name:"Test visitor",message:"Guestbook integration test."})});const guestSubmitData=await guestSubmit.json();
