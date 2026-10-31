@@ -93,7 +93,7 @@ Admin (session required):
 
 Admin routes require the owner session:
 - GET /api/admin/widgets -> { items } in saved order. Each item includes id, type, name, enabled, displayMode, visibleDesktop, visibleMobile, refreshSeconds, config, cacheUpdatedAt, lastError and sortOrder.
-- POST /api/admin/widgets -> 201 { item }. Body: { name, type (text|clock|countdown|quote), enabled, displayMode (card|inline), visibleDesktop, visibleMobile, refreshSeconds (60-86400), config }. Config is type-specific: text { text }, clock { timezone, label }, countdown { targetAt (ISO datetime), label }, quote { text, author }.
+- POST /api/admin/widgets -> 201 { item }. Body: { name, type (text|clock|countdown|quote|github|minecraft), integrationId (required for github/minecraft), enabled, displayMode (card|inline), visibleDesktop, visibleMobile, refreshSeconds (60-86400), config }. Config is type-specific: text { text }, clock { timezone, label }, countdown { targetAt (ISO datetime), label }, quote { text, author }; github {}; minecraft {}. GitHub and Minecraft widgets require integrationId to reference an enabled integration with status ok.
 - PUT /api/admin/widgets/:id -> { item }, same body as create.
 - PUT /api/admin/widgets/order { ids } -> { items }.
 - POST /api/admin/widgets/:id/duplicate -> 201 { item }; duplicate is disabled by default.
@@ -102,9 +102,9 @@ Admin routes require the owner session:
 - Invalid timezone or type-specific config returns 400 invalid_widget_config.
 
 Public:
-- GET /api/public/widgets/:id/data -> { widget } for enabled widgets only; disabled and unknown widgets both return 404. The response contains only display-safe configuration, not integration credentials.
+- GET /api/public/widgets/:id/data -> { widget } for enabled widgets only; disabled and unknown widgets both return 404. The response contains only display-safe configuration, not integration credentials. For GitHub/Minecraft widget types, it also includes integrationData from the matching enabled, successfully tested integration cache.
 - Public homepage layout sections of type widget use widgetId to render the selected widget.
-- Built-in widget rendering: text, clock, countdown, quote. Widget visibility on desktop/mobile is controlled by its homepage layout section and the widget's own visibility settings.
+- Built-in widget rendering: text, clock, countdown, quote, GitHub profile, and Minecraft server status. Widget visibility on desktop/mobile is controlled by its homepage layout section and the widget's own visibility settings.
 - Third-party integrations, scheduled refresh, and credential storage are not part of checkpoint 1.
 
 
