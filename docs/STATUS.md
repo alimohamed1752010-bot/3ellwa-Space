@@ -51,7 +51,7 @@ This chat's sandbox had no network, so npm install was impossible: no Hono, zod,
 - Owner steps, in this order, from the repo folder:
   1. `npm install`, then `npm run typecheck`. Expect it to pass; if not, paste the errors (likely small type fixes).
   2. `npm run test:web`. The new file is apps/web/src/media.test.tsx; the older 51 tests should still pass.
-  3. `npm run dev` with DISABLE_OTP=true, then `node scripts/part4-test.mjs http://localhost:8787 "your test password"`, and re-run part25 and part3 scripts to confirm nothing regressed.
+  3. Set local `.dev.vars` with `ADMIN_PASSWORD` and `DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook`, run `npm run dev`, then `node scripts/part4-test.mjs http://localhost:8787 "your test password"`; re-run part25 and part3 scripts to confirm nothing regressed. OTP stays mandatory.
   4. In a real browser, open Media Library: upload one image (the crop editor should appear), upload several at once, drag a file onto the page, make a folder, rename, add alt text, replace a file, delete an image that a link uses (the warning should name the link), try it on a phone.
 - Known risks to look at first: the native <dialog> stacking (detail dialog under the editor or delete confirmation), createImageBitmap/canvas WebP encoding in Safari (the editor shows a clear error if WebP is unsupported; pick JPEG then), and pointer-drag cropping on touch.
 
@@ -70,11 +70,11 @@ This chat's sandbox had no network, so npm install was impossible: no Hono, zod,
 - Part 3: link images now come from the media library picker. Deleting a link leaves its image in the library (visible there, "Not used anywhere yet").
 - Part 3: password-protected destinations, custom redirect routes (links.slug), and link preview cards exist in the schema or spec as optional extras and are not built. links.password_hash and links.slug are unused.
 - Part 3: links are public via /go/:id only (ids are random, unguessable but not secret). Click counts per link include only GET requests; bots and link previewers that GET the URL are counted. Bot filtering belongs to Part 8 analytics.
-- Part 3: pages with the slug "links" would clash with the built-in /links route. Part 4 must reserve "links" and "go" as slugs.
+- Part 3: pages with the slug "links" or "go" would clash with built-in routes. The Part 4 pages API now reserves both slugs (along with other system paths).
 - Part 3: reordering links is global (one order across all links); the public page shows that order within each category. Dragging is disabled while a search or filter is active.
 - Part 3: import appends (never replaces) and cannot import images (image ids are not portable). Max 500 links per file, 1000 links and 50 categories in total.
 - Last browser run after the avatar/banner race fix was not repeated (server restart trouble in the sandbox); the fix is covered by a UI test. Verify once: upload avatar and banner back to back, Save, refresh the public page.
-- Part 2.5 limits: navigation is flat (no sub-menus, parent_id unused) and only internal-path/URL targets (page targets arrive with Part 4); the menu shows on the homepage only; social links render as text pills (no icons); badges are label-only; online mode "auto" is disabled until Part 7; uploaded image width/height are not recorded; reordering uses up/down buttons, not drag and drop (dnd-kit not added yet).
+- Part 2.5 limits: navigation is flat (no sub-menus, parent_id unused); it now supports internal-path/URL and published-page targets. The menu shows on the homepage only; social links render as text pills (no icons); badges are label-only; online mode "auto" is disabled until Part 7; uploaded image width/height are not recorded; reordering uses up/down buttons, not drag and drop (dnd-kit not added yet).
 - The unsaved-changes guard covers sidebar links and closing/reloading the tab (BrowserRouter has no blocker); browser Back is not guarded.
 - Deleting an image clears every reference to it; the library asks first and lists where it is used. Theme backgrounds (Part 5) must be added to worker/lib/mediaUsage.ts when they store asset ids.
 - wrangler.jsonc has database_id REPLACE_WITH_D1_DATABASE_ID. Replace with the real id after `wrangler d1 create` (Part 2 walkthrough). The id is not a secret.
