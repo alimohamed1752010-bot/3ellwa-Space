@@ -49,14 +49,14 @@ Update this file at the end of every part. It is the first thing a new chat read
 - Browser-check the Pages, Media Library, Projects screens and public /projects pages on desktop and mobile.
 - Then continue the owner walkthrough and acceptance on the deployed Cloudflare site.
 
-## Part 4 checkpoint 1: what was and was not verified
+## Part 4 verification status: what was and was not verified
 This chat's sandbox had no network, so npm install was impossible: no Hono, zod, React, Vitest, Vite, or Wrangler. The Part 4 checkpoint 1, 2, and 3 changes therefore remain unverified by typecheck, jsdom tests, or a local Worker run.
 - Verified here: image-size reading (PNG, JPEG incl. progressive, GIF, WebP lossy, lossless, extended) against real files made with Pillow; filename tag helpers; the crop and resize geometry (all pass in plain Node); every new or changed .ts/.tsx file parses (syntax check only).
 - Written but never run: Part 4 media, pages, projects, and public showcase Worker routes; all Part 4 React components; scripts/part4-test.mjs (now includes media, pages, navigation, and projects regression checks).
 - Owner steps, in this order, from the repo folder:
-  1. `npm install`, then `npm run typecheck`. Expect it to pass; if not, paste the errors (likely small type fixes).
-  2. `npm run test:web`. The new file is apps/web/src/media.test.tsx; the older 51 tests should still pass.
-  3. Set local `.dev.vars` with `ADMIN_PASSWORD` and `DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook`, run `npm run dev`, then `node scripts/part4-test.mjs http://localhost:8787 "your test password"`; re-run part25 and part3 scripts to confirm nothing regressed. OTP stays mandatory.
+  1. Run `npm install`, then `npm run typecheck`. Fix any reported errors before moving on; this work has not been typechecked yet.
+  2. Run `npm run test:web` and resolve any failures.
+  3. Set local `.dev.vars` with `ADMIN_PASSWORD` and `DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook`, run `npm run dev`, then `node scripts/part4-test.mjs http://localhost:8787 "your test password"`. Re-run `node scripts/part25-test.mjs` and `node scripts/part3-test.mjs` to check regressions. OTP stays mandatory.
   4. In a real browser, open Media Library and test upload/crop/replace/usage warnings; create and publish a page with a gallery block; create a project with logo, cover, gallery, links, and technologies; verify it appears on /projects and its detail route; test hidden projects and mobile layouts.
 - Known risks to look at first: the native <dialog> stacking (detail dialog under the editor or delete confirmation), createImageBitmap/canvas WebP encoding in Safari (the editor shows a clear error if WebP is unsupported; pick JPEG then), and pointer-drag cropping on touch.
 
