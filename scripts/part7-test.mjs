@@ -13,6 +13,10 @@ const check=(name,ok,detail="")=>{console.log(`${ok?"PASS":"FAIL"}  ${name}${det
 const headers={"content-type":"application/json","cf-connecting-ip":"10.9.0.7"};
 let r=await fetch(base+"/api/health");check("Worker is ready",r.status===200,r.status);
 const home=await fetch(base+"/");
+check("HTML security policy is present",home.headers.get("content-security-policy")?.includes("default-src 'self'")&&home.headers.get("content-security-policy")?.includes("frame-ancestors 'none'"));
+check("baseline response headers are present",home.headers.get("x-content-type-options")==="nosniff"&&home.headers.get("x-frame-options")==="DENY"&&!!home.headers.get("permissions-policy"));
+check("HTTPS response includes HSTS",!base.startsWith("https:")||!!home.headers.get("strict-transport-security"));
+const home=await fetch(base+"/");
 check("HTML has a restrictive Content-Security-Policy",home.headers.get("content-security-policy")?.includes("default-src 'self'")&&home.headers.get("content-security-policy")?.includes("frame-ancestors 'none'"));
 check("baseline security headers are present",home.headers.get("x-content-type-options")==="nosniff"&&home.headers.get("x-frame-options")==="DENY"&&!!home.headers.get("permissions-policy"));
 check("HTTPS responses enable HSTS",!base.startsWith("https:")||home.headers.get("strict-transport-security")?.includes("max-age="));
