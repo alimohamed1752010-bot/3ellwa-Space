@@ -5,7 +5,7 @@ Last reconciled: 2026-10-31
 ## Current verified state
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
-- Latest application checkpoint: Part 7 checkpoint 4 (hourly integration refresh).
+- Latest application checkpoint: Part 8 checkpoint 1 (privacy-conscious analytics and admin overview).
 - Latest verified CI run: [41207447422](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41207447422), passed typecheck, web tests, production build, and local Worker integration tests, including the scheduled handler test.
 - Cloudflare Worker: `3ellwa-space`; active deployment `f1cb2e3b-8d30-41aa-b2ec-4acc29fce0f5`, Worker version **147**, version ID `0dba166f-696c-4926-992d-d81e597d4832`, assigned **100% traffic**.
 - Cron Trigger verified through Cloudflare API: `0 * * * *` (hourly, UTC).
@@ -27,6 +27,7 @@ Last reconciled: 2026-10-31
 - Part 7 checkpoint 2: public GitHub profile and Minecraft server integrations, strict input validation, fixed provider endpoints, server-side requests, normalized cached snapshots and opt-in public exposure.
 - Part 7 checkpoint 3: integration-backed GitHub and Minecraft homepage widgets. Widgets require an enabled, successfully tested matching integration.
 - Part 7 checkpoint 4: hourly Cloudflare Cron Trigger refresh for enabled integrations, public freshness timestamps, widget age labels, and stale-cache preservation during transient provider outages.
+- Part 8 checkpoint 1: public page-view collection with daily pseudonymous visitor IDs, referrer host and coarse device/browser metadata; admin analytics summary, traffic trends, top pages, referrers, devices, and 90-day event purge; admin Overview and Analytics screens.
 - Authentication uses plain `ADMIN_PASSWORD` plus mandatory Discord OTP. The code is single-use, time-limited and rate-limited. Do not add password-only or OTP bypasses. Do not add `ADMIN_PASSWORD_HASH` or `SESSION_SECRET`.
 
 ## Verification
