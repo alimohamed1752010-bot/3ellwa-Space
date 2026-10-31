@@ -1,0 +1,1 @@
+// Pages administration routes.
