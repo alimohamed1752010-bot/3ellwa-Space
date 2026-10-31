@@ -6,7 +6,7 @@ Last reconciled: 2026-10-31
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
 - Latest source changes include domain inventory improvements, SEO privacy hardening, and a manual GitHub Actions deployment fallback (`.github/workflows/deploy.yml`). The crawler-visible noindex follow-up (`6d1dc3b`) is deployed in Worker version 172.
-- Latest GitHub CI run [41221123237](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41221123237) completed successfully on commit `28a49ce864dda67bcde290446cc4851c57322d3c`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed.
+- Latest GitHub CI run [41220913071](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41220913071) completed successfully on commit `f552c740fc4743c42711bda7fd30a93e2872b786`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed.
 - Cloudflare Worker: `3ellwa-space`; latest deployment `0c68b9b2-1cc8-4ca2-bffa-5dfc31307f04`, version `7bd78949-6d07-49c8-9112-18ffadeae561` (version 172), assigned 100% traffic at 16:31 UTC on 2026-10-31. This deployment was built from commit `6d1dc3b279571781c941df547426fed648e4abf2`, which includes the crawler-visible noindex correction.
 - Cron Trigger: `0 * * * *` (hourly UTC).
 - Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
@@ -19,7 +19,7 @@ Last reconciled: 2026-10-31
 ## Latest checkpoint
 
 - Privacy default hardening: SEO settings now default to search indexing disabled. Production D1 was updated to `indexingEnabled: false` (settings version 2, verified directly). Worker version 172 includes the follow-up crawler fix.
-- Crawler behavior correction: while indexing is disabled, `robots.txt` now allows public crawling (but disallows `/api/` and `/admin/`) so crawlers can read the `X-Robots-Tag: noindex, nofollow` header and HTML robots meta tag. The sitemap remains unavailable. This source change and its integration assertions are committed but not yet deployed.
+- Crawler behavior correction: while indexing is disabled, `robots.txt` now allows public crawling (but disallows `/api/` and `/admin/`) so crawlers can read the `X-Robots-Tag: noindex, nofollow` header and HTML robots meta tag. The sitemap remains unavailable. This source change and its integration assertions are included in Worker version 172, which is assigned 100% of production traffic.
 
 ## Implemented
 
