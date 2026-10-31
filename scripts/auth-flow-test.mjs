@@ -7,7 +7,8 @@ const base = (process.argv[2] ?? "http://localhost:8787").replace(/\/$/, "");
 const PASSWORD = process.argv[3];
 if (!PASSWORD) { console.error('Usage: node scripts/auth-flow-test.mjs http://localhost:8787 "test password"'); process.exit(1); }
 const messages = [];
-http.createServer((req, res) => { let b = ""; req.on("data", (d) => (b += d)); req.on("end", () => { try { messages.push(JSON.parse(b).content); } catch {} res.writeHead(204).end(); }); }).listen(9999);
+const discordServer = http.createServer((req, res) => { let b = ""; req.on("data", (d) => (b += d)); req.on("end", () => { try { messages.push(JSON.parse(b).content); } catch {} res.writeHead(204).end(); }); });
+await new Promise((resolve) => discordServer.listen(9999, "127.0.0.1", resolve));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let failed = 0;
 const check = (n, ok, info = "") => { console.log(`${ok ? "PASS" : "FAIL"}  ${n}${info !== "" ? "  (" + info + ")" : ""}`); if (!ok) failed++; };
