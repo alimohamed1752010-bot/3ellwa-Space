@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AppEnv } from "../env";
 import { apiError } from "../lib/http";
 import { parseBody } from "../lib/validate";
+import { mediaUrl } from "../lib/media";
 
 export const layoutRoutes = new Hono<AppEnv>();
 
@@ -34,11 +35,19 @@ const parseLayout = (raw: string | null | undefined): HomeLayout => {
   catch { return DEFAULT_HOME_LAYOUT; }
 };
 
+async function withMediaUrls(db:D1Database,layout:HomeLayout) {
+  const sections=await Promise.all(layout.sections.map(async section=>{
+    if(!section.assetId)return {...section,imageUrl:null};
+    const asset=await db.prepare("SELECT id,filename FROM media_assets WHERE id=? AND kind='image'").bind(section.assetId).first<{id:string;filename:string}>();
+    return {...section,imageUrl:asset?mediaUrl(asset.id,asset.filename):null};
+  }));
+  return {sections};
+}
 async function read(db: D1Database) {
   const row = await db.prepare("SELECT draft_json,published_json,version FROM site_settings WHERE key='homepage_layout'").first<{draft_json:string|null;published_json:string|null;version:number}>();
   return {
-    draft: parseLayout(row?.draft_json ?? row?.published_json),
-    published: parseLayout(row?.published_json),
+    draft: await withMediaUrls(db,parseLayout(row?.draft_json ?? row?.published_json)),
+    published: await withMediaUrls(db,parseLayout(row?.published_json)),
     version: row?.version ?? 0,
     hasDraft: !!row?.draft_json && row.draft_json !== row.published_json,
   };
