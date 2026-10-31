@@ -24,7 +24,7 @@ async function load(db:D1Database,id:string) {
  const sections=(await db.prepare("SELECT * FROM page_sections WHERE page_id=? ORDER BY sort_order,rowid").bind(id).all<Section>()).results;
  return { page, sections, item:{ id:page.id,title:page.title,slug:page.slug,status:page.status,visibility:page.visibility,...meta(page),sections:sections.filter(s=>!s.deleted_in_draft).map(s=>({id:s.id,type:s.type,...json<Record<string,unknown>>(s.draft_json, json<Record<string,unknown>>(s.published_json,{}))})),version:page.version,updatedAt:page.updated_at,publishedAt:page.published_at } };
 }
-async function taken(db:D1Database,value:string,id="") { return !!await db.prepare("SELECT 1 FROM pages WHERE slug=? AND id!=?").bind(value,id).first(); }
+async function taken(db:D1Database,value:string,id="") { const [page,project]=await Promise.all([db.prepare("SELECT 1 FROM pages WHERE slug=? AND id!=?").bind(value,id).first(),db.prepare("SELECT 1 FROM projects WHERE slug=?").bind(value).first()]);return !!page||!!project; }
 function makeSlug(title:string) { const s=title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||"new-page"; return reserved.has(s)||s.startsWith("go-")?s+"-page":s; }
 
 pageRoutes.get("/pages",async c=>{
