@@ -39,6 +39,7 @@ jobs:
           node --check scripts/part5-test.mjs
           node --check scripts/part6-test.mjs
           node --check scripts/part7-test.mjs
+          bash -n scripts/restore-drill.sh
       - name: Build production web assets
         run: npm run build:web
       - name: Create source archive
