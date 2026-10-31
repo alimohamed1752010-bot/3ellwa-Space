@@ -67,16 +67,22 @@ function country(c: Context<AppEnv>) {
 
 // POST /api/auth/password
 authRoutes.post("/password", async (c) => {
+  let stage = "configuration";
+  try {
   if (!c.env.ADMIN_PASSWORD || !c.env.DISCORD_AUTH_WEBHOOK_URL) return notConfigured(c);
+  stage = "read_password_request";
   const body = z.object({ password: z.string().min(1).max(1024) }).safeParse(await c.req.json().catch(() => null));
   if (!body.success) return apiError(c, 400, "bad_request", "Password required.");
 
+  stage = "check_rate_limit";
   const ip = await ipHash(c);
   const wait = await lockedFor(c, ip, "password");
   if (wait) return lockedResponse(c, wait);
+  stage = "cleanup_auth_records";
   await cleanup(c);
 
   // Compare the configured plain-text secret.
+  stage = "verify_password";
   const ok = safeEqual(body.data.password, c.env.ADMIN_PASSWORD);
   await record(c, ip, "password", ok);
   if (!ok) {
@@ -87,6 +93,7 @@ authRoutes.post("/password", async (c) => {
     return apiError(c, 401, "invalid_credentials", "Invalid password.");
   }
 
+  stage = "create_otp_challenge";
   const code = generateCode();
   const challengeId = randomId(16);
   const codeHash = await sha256Hex(`code:${challengeId}:${code}`);
@@ -94,12 +101,18 @@ authRoutes.post("/password", async (c) => {
     c.env.DB.prepare("DELETE FROM auth_challenges WHERE used = 0"),
     c.env.DB.prepare("INSERT INTO auth_challenges (id, code_hash, expires_at) VALUES (?, ?, datetime('now', ?))").bind(challengeId, codeHash, `+${CODE_MINUTES} minutes`),
   ]);
+  stage = "send_discord_otp";
   const sent = await sendDiscord(c.env, `🔐 3ellwa.space login code: **${code}**\nValid ${CODE_MINUTES} minutes, one use. Country ${country(c)}.`);
   if (!sent) {
     await c.env.DB.prepare("DELETE FROM auth_challenges WHERE id = ?").bind(challengeId).run();
     return apiError(c, 502, "discord_unavailable", "Could not send the code to Discord. Check the webhook configuration.");
   }
+  stage = "return_challenge";
   return c.json({ challengeId, expiresInSeconds: CODE_MINUTES * 60 });
+  } catch (error) {
+    console.error("Admin password login failed at stage:", stage, error);
+    return apiError(c, 500, "auth_internal_error", `Login failed inside the Worker during: ${stage}.`);
+  }
 });
 
 // POST /api/auth/code
