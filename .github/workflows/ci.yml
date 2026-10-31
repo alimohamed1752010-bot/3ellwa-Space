@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 3ellwa-space-source-${{ github.sha }}
-          path: 3ellwa-space-${GITHUB_SHA::7}.zip
+          path: 3ellwa-space-*.zip
           if-no-files-found: error
           retention-days: 7
 
