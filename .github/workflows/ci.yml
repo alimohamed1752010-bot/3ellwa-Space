@@ -68,7 +68,7 @@ jobs:
         run: npm run db:migrate:local
       - name: Run Worker integration suite
         run: |
-          npx wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/3ellwa-worker.log 2>&1 &
+          npx wrangler dev --local --test-scheduled --ip 127.0.0.1 --port 8787 > /tmp/3ellwa-worker.log 2>&1 &
           worker_pid=$!
           trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
           ready=0
