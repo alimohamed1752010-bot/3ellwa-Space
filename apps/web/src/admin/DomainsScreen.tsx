@@ -9,6 +9,14 @@ type DomainData = {
   checkedAt: string;
 };
 
+type DnsCheck = {
+  hostname: string;
+  resolver: string;
+  hasAddress: boolean;
+  records: Array<{ type: "A" | "AAAA" | "CNAME"; status: number; answers: string[] }>;
+  checkedAt: string;
+};
+
 export default function DomainsScreen() {
   const [data, setData] = useState<DomainData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +24,8 @@ export default function DomainsScreen() {
   const [setup, setSetup] = useState(false);
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState("");
+  const [dnsChecks, setDnsChecks] = useState<Record<string, DnsCheck>>({});
+  const [checkingDns, setCheckingDns] = useState("");
 
   const filteredRecords = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -32,6 +42,19 @@ export default function DomainsScreen() {
       window.setTimeout(() => setCopied(current => current === label ? "" : current), 1800);
     } catch {
       setError("Clipboard access was blocked by the browser. Select and copy the value manually.");
+    }
+  }, []);
+
+  const checkDns = useCallback(async (hostname: string) => {
+    setCheckingDns(hostname);
+    setError("");
+    try {
+      const result = await api.get<DnsCheck>(`/api/admin/domains/dns-check?hostname=${encodeURIComponent(hostname)}`);
+      setDnsChecks(current => ({ ...current, [hostname]: result }));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not check public DNS.");
+    } finally {
+      setCheckingDns("");
     }
   }, []);
 
@@ -112,12 +135,13 @@ export default function DomainsScreen() {
                 <div className="flex flex-wrap items-center gap-2"><p className="break-all text-sm font-medium">{record.name}</p><button type="button" className="rounded-control border border-line px-2 py-1 text-xs text-muted hover:text-ink" onClick={() => void copyValue(record.name, "name:" + record.id)}>{copied === "name:" + record.id ? "Copied" : "Copy name"}</button></div>
                 <div className="mt-1 flex flex-wrap items-center gap-2"><p className="break-all font-mono text-xs text-muted">{record.content}</p><button type="button" className="rounded-control border border-line px-2 py-1 text-xs text-muted hover:text-ink" onClick={() => void copyValue(record.content, "content:" + record.id)}>{copied === "content:" + record.id ? "Copied" : "Copy target"}</button></div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted"><span className="rounded-control bg-raised px-2 py-1">{record.type}</span><span>{record.proxied ? "Proxied" : "DNS only"}</span><span>TTL {record.ttl === 1 ? "Auto" : record.ttl}</span></div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted"><span className="rounded-control bg-raised px-2 py-1">{record.type}</span><span>{record.proxied ? "Proxied" : "DNS only"}</span><span>TTL {record.ttl === 1 ? "Auto" : record.ttl}</span><Button size="xs" variant="secondary" onClick={() => void checkDns(record.name)} disabled={checkingDns === record.name}>{checkingDns === record.name ? "Checking…" : "Check public DNS"}</Button></div>
+              {dnsChecks[record.name] && <p className="text-xs text-muted sm:col-span-2" role="status">{dnsChecks[record.name].hasAddress ? "Public DNS resolves to " + dnsChecks[record.name].records.flatMap(item => item.answers).join(", ") : "No public A/AAAA address found."} · Checked {new Date(dnsChecks[record.name].checkedAt).toLocaleTimeString()}</p>}
             </div>) : <p className="text-sm text-muted">{data.records.length ? "No records match this search." : "No DNS records were returned."}</p>}
             {copied && <p className="text-xs text-success" role="status">Copied to clipboard.</p>}
           </CardBody>
         </Card>
-        <p className="text-xs text-muted">Read-only checkpoint. DNS changes are deliberately not enabled yet. Last checked {new Date(data.checkedAt).toLocaleString()}.</p>
+        <p className="text-xs text-muted">Read-only checkpoint. DNS changes are deliberately not enabled yet. Public DNS checks query Cloudflare's 1.1.1.1 resolver; they do not guarantee that every network has received the same result. Last inventory check {new Date(data.checkedAt).toLocaleString()}.</p>
       </>}
     </div>
   );
