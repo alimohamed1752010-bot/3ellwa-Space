@@ -5,11 +5,11 @@ Last reconciled: 2026-10-31
 ## Current verified state
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
-- Latest source commits: domain inventory pagination hardening `3aa393f` and domain-screen search/copy controls `d3cea94`. The latter is newer than the latest confirmed production deployment.
+- Latest source changes include domain inventory improvements and SEO privacy hardening. The crawler-visible noindex follow-up (`6d1dc3b`) is newer than the latest confirmed production deployment.
 - Latest GitHub CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) completed successfully on commit `7336adcccbde4b9db263a537fbd2677ab3601135`; both typecheck/web/build and local Worker integration jobs passed.
-- Cloudflare Worker: `3ellwa-space`; deployment `efd33c52-5d65-4841-a820-7f5877eb241f`, version `6527099e-90c0-43d3-b0d9-92637ecb9d30`, assigned 100% traffic at last inspection.
+- Cloudflare Worker: `3ellwa-space`; deployment `d8df80b6-d7f3-4c3a-a2b1-1062044993d8`, version `f3adfe8b-854c-4ad8-b097-52c590b27e74` (version 171), assigned 100% traffic at 16:27 UTC on 2026-10-31.
 - Cron Trigger: `0 * * * *` (hourly UTC).
-- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`.
+- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet.
 - Public domain: https://3ellwa.space.
 - Separate private R2 backup bucket: `3ellwa-space-backups`. It currently contains no objects under `d1/` or `media/`.
 - Production backup workflow is committed but no successful backup has been verified. The four GitHub Actions secrets in `docs/BACKUP.md` remain required.
@@ -17,7 +17,8 @@ Last reconciled: 2026-10-31
 
 ## Latest checkpoint
 
-- Privacy default hardening: SEO settings now default to search indexing disabled. Integration coverage verifies default robots.txt and sitemap behavior before explicitly enabling indexing.
+- Privacy default hardening: SEO settings now default to search indexing disabled. Production D1 was updated to `indexingEnabled: false` (settings version 2, verified directly). Active Worker version 171 predates the follow-up crawler fix.
+- Crawler behavior correction: while indexing is disabled, `robots.txt` now allows public crawling (but disallows `/api/` and `/admin/`) so crawlers can read the `X-Robots-Tag: noindex, nofollow` header and HTML robots meta tag. The sitemap remains unavailable. This source change and its integration assertions are committed but not yet deployed.
 
 ## Implemented
 
@@ -29,10 +30,10 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
-- CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) passed both jobs before the Part 10 files were added.
+- CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) passed both jobs before the recent Part 10 and SEO privacy changes. No CI result is available for the latest commits.
 - Cloudflare API inspection confirmed the Worker, hourly schedule, D1/R2 bindings, and the separate backup bucket.
 - Cloudflare API inspection confirmed no backup objects currently exist under `d1/` or `media/`.
-- Cloudflare deployed version `7e34ffdf-1685-49d4-9bb6-b475a6051715` was created at 16:08:31 UTC, after the pagination commit but before the later screen usability commit. The latest screen usability commit has not yet been confirmed in production. No CI status is currently exposed for the newest commits.
+- Cloudflare API inspection confirms version 171 (`f3adfe8b-854c-4ad8-b097-52c590b27e74`) is assigned 100% traffic. It was created after the default-indexing code commit, but before the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
 
 ## Remaining acceptance work
 
