@@ -5,9 +5,9 @@ Last reconciled: 2026-10-31
 ## Current verified state
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
-- Latest application checkpoint: Part 8 checkpoint 1 (privacy-conscious analytics and admin overview).
-- Latest verified CI run: [41209125650](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41209125650), passed typecheck, web tests, production build, and local Worker integration tests, including analytics tracking and summary assertions.
-- Cloudflare Worker: `3ellwa-space`; active deployment `20d02cac-3e87-4dfc-8b8f-f45d61889558`, Worker version **150**, version ID `2fd48712-175d-4fb6-8d20-bc8388718375`, assigned **100% traffic**.
+- Latest application checkpoint: Part 8 checkpoint 2 (guestbook moderation and timed announcements).
+- Latest verified CI run: [41211738422](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41211738422), passed typecheck, web tests, production build, and local Worker integration tests, including guestbook moderation and announcement visibility assertions.
+- Cloudflare Worker: `3ellwa-space`; active deployment `485221e6-c6f6-43f6-afd0-750d7ede0175`, Worker version **153**, version ID `89c27403-79ae-4535-8ff7-262f9398049e`, assigned **100% traffic**.
 - Cron Trigger verified through Cloudflare API: `0 * * * *` (hourly, UTC).
 - Production bindings verified: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`.
 - Production D1 database: `3ellwa-space-db`. Migrations `0001_init.sql`, `0002_theme_presets.sql`, and `0003_layout_publishing.sql` are applied. The Part 6 `homepage_layout` setting and `publish_history` table were verified.
@@ -28,13 +28,14 @@ Last reconciled: 2026-10-31
 - Part 7 checkpoint 3: integration-backed GitHub and Minecraft homepage widgets. Widgets require an enabled, successfully tested matching integration.
 - Part 7 checkpoint 4: hourly Cloudflare Cron Trigger refresh for enabled integrations, public freshness timestamps, widget age labels, and stale-cache preservation during transient provider outages.
 - Part 8 checkpoint 1: public page-view collection with daily pseudonymous visitor IDs, referrer host and coarse device/browser metadata; admin analytics summary, traffic trends, top pages, referrers, devices, and 90-day event purge; admin Overview and Analytics screens.
+- Part 8 checkpoint 2: public guestbook with pending-by-default submissions, honeypot and per-IP-hash rate limit; admin moderation (approve/reject/delete); timed site-wide announcements with public visibility filtering; admin announcement manager. The analytics route tracker is mounted in the public router.
 - Authentication uses plain `ADMIN_PASSWORD` plus mandatory Discord OTP. The code is single-use, time-limited and rate-limited. Do not add password-only or OTP bypasses. Do not add `ADMIN_PASSWORD_HASH` or `SESSION_SECRET`.
 
 ## Verification
 
-- CI run [41209125650](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41209125650) passed both jobs: typecheck/web tests/production build and local Worker integration tests, including the new analytics checks.
+- CI run [41211738422](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41211738422) passed both jobs: typecheck/web tests/production build and local Worker integration tests, including guestbook submission/moderation and announcement visibility/cleanup checks.
 - Local Part 7 integration tests confirm the scheduled handler runs successfully with no enabled providers. Provider network refreshes are not called in CI.
-- Cloudflare Builds watches the GitHub `main` branch. The successful build for the Part 8 analytics code deployed Worker version 150. Cloudflare deployment inspection confirms 100% traffic on that version and the expected bindings.
+- Cloudflare Builds watches the GitHub `main` branch. The successful Part 8 checkpoint 2 build deployed Worker version 153. Cloudflare deployment inspection confirms 100% traffic on that version and the expected bindings.
 - Cloudflare's schedules API confirms the hourly cron expression is registered.
 - The remote Part 6 D1 migration and layout/publish-history queries were verified directly.
 - Do not run destructive integration suites against production. Integration tests that create/delete content must use isolated local D1/R2.
@@ -51,7 +52,7 @@ Last reconciled: 2026-10-31
 
 - Add more public integrations such as Steam only after provider behavior and privacy are reviewed.
 - Spotify and Discord presence require provider-specific authorization and a verified encrypted credential design before implementation. Do not collect or expose OAuth secrets without that design.
-- Part 8: analytics, guestbook, privacy/SEO and optional extras.
+- Part 8 checkpoint 3: site-wide privacy and SEO controls, including explicit search indexing policy, robots.txt behavior, and per-page metadata publishing.
 - Part 9: security hardening, testing and backup/recovery.
 - Part 10: domain/subdomain management.
 
