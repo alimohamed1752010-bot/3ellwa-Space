@@ -94,7 +94,7 @@ app.all("*", async (c) => {
   // 2. Decide which shell, if any.
   const adminPath = normalizeAdminPath(env.ADMIN_PATH);
   const isAdmin = adminPath !== null && (path === adminPath || path.startsWith(adminPath + "/"));
-  const isPublic = !isAdmin && (path === "/" || path === "/links" || path === "/projects" || (path.startsWith("/projects/") ? await publicProjectExists(env, path.slice("/projects/".length)) : await publicPageExists(env, path)));
+  const isPublic = !isAdmin && (path === "/" || path === "/links" || path === "/projects" || path === "/guestbook" || (path.startsWith("/projects/") ? await publicProjectExists(env, path.slice("/projects/".length)) : await publicPageExists(env, path)));
   const status = isAdmin || isPublic ? 200 : 404;
 
   // 3. Serve the HTML shell. Wrong admin paths and unknown paths take the exact same branch (status 404).
