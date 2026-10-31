@@ -2,10 +2,10 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../env";
-import { generateCode, hmacHex, randomId, safeEqual, verifyPassword } from "../lib/crypto";
+import { generateCode, randomId, safeEqual, sha256Hex } from "../lib/crypto";
 import { sendDiscord } from "../lib/discord";
 import { apiError } from "../lib/http";
-import { createSession, currentSessionId, destroySession, secretReady } from "./session";
+import { createSession, currentSessionId, destroySession } from "./session";
 
 const MAX_FAILURES = 5; // per kind, per IP, inside the window
 const WINDOW_MINUTES = 15;
@@ -18,7 +18,7 @@ type Kind = "password" | "code";
 
 async function ipHash(c: Context<AppEnv>): Promise<string> {
   const ip = c.req.header("cf-connecting-ip") ?? "unknown";
-  return hmacHex(c.env.SESSION_SECRET, "ip:" + ip);
+  return sha256Hex("ip:" + ip);
 }
 
 /** Returns seconds to wait if this IP is locked for this kind, otherwise 0. */
@@ -67,7 +67,7 @@ function country(c: Context<AppEnv>) {
 
 // POST /api/auth/password
 authRoutes.post("/password", async (c) => {
-  if (!secretReady(c) || (!c.env.ADMIN_PASSWORD && !c.env.ADMIN_PASSWORD_HASH)) return notConfigured(c);
+  if (!c.env.ADMIN_PASSWORD || !c.env.DISCORD_AUTH_WEBHOOK_URL) return notConfigured(c);
   const body = z.object({ password: z.string().min(1).max(1024) }).safeParse(await c.req.json().catch(() => null));
   if (!body.success) return apiError(c, 400, "bad_request", "Password required.");
 
@@ -76,11 +76,8 @@ authRoutes.post("/password", async (c) => {
   if (wait) return lockedResponse(c, wait);
   await cleanup(c);
 
-  // Prefer the plain-text ADMIN_PASSWORD secret when configured. safeEqual
-  // performs a constant-time comparison; retain hash support for existing installs.
-  const ok = c.env.ADMIN_PASSWORD
-    ? safeEqual(body.data.password, c.env.ADMIN_PASSWORD)
-    : await verifyPassword(body.data.password, c.env.ADMIN_PASSWORD_HASH ?? "");
+  // Compare the configured plain-text secret.
+  const ok = safeEqual(body.data.password, c.env.ADMIN_PASSWORD);
   await record(c, ip, "password", ok);
   if (!ok) {
     const nowLocked = await lockedFor(c, ip, "password");
@@ -90,15 +87,9 @@ authRoutes.post("/password", async (c) => {
     return apiError(c, 401, "invalid_credentials", "Invalid password.");
   }
 
-  if (c.env.DISABLE_OTP === "true") {
-    await createSession(c, false);
-    notify(c, `ℹ️ Admin login with password only (DISABLE_OTP is on), country ${country(c)}.`);
-    return c.json({ authenticated: true });
-  }
-
   const code = generateCode();
   const challengeId = randomId(16);
-  const codeHash = await hmacHex(c.env.SESSION_SECRET, `code:${challengeId}:${code}`);
+  const codeHash = await sha256Hex(`code:${challengeId}:${code}`);
   await c.env.DB.batch([
     c.env.DB.prepare("DELETE FROM auth_challenges WHERE used = 0"),
     c.env.DB.prepare("INSERT INTO auth_challenges (id, code_hash, expires_at) VALUES (?, ?, datetime('now', ?))").bind(challengeId, codeHash, `+${CODE_MINUTES} minutes`),
@@ -106,14 +97,13 @@ authRoutes.post("/password", async (c) => {
   const sent = await sendDiscord(c.env, `🔐 3ellwa.space login code: **${code}**\nValid ${CODE_MINUTES} minutes, one use. Country ${country(c)}.`);
   if (!sent) {
     await c.env.DB.prepare("DELETE FROM auth_challenges WHERE id = ?").bind(challengeId).run();
-    return apiError(c, 502, "discord_unavailable", "Could not send the code to Discord. Check the webhook, or set DISABLE_OTP=true as a temporary fallback.");
+    return apiError(c, 502, "discord_unavailable", "Could not send the code to Discord. Check the webhook configuration.");
   }
   return c.json({ challengeId, expiresInSeconds: CODE_MINUTES * 60 });
 });
 
 // POST /api/auth/code
 authRoutes.post("/code", async (c) => {
-  if (!secretReady(c)) return notConfigured(c);
   const body = z
     .object({ challengeId: z.string().min(1).max(64), code: z.string().regex(/^\d{8}$/), trustDevice: z.boolean().optional() })
     .safeParse(await c.req.json().catch(() => null));
@@ -135,7 +125,7 @@ authRoutes.post("/code", async (c) => {
 
   // Count the try before comparing, so a crash or race cannot grant free guesses.
   await c.env.DB.prepare("UPDATE auth_challenges SET attempts = attempts + 1 WHERE id = ?").bind(ch.id).run();
-  const given = await hmacHex(c.env.SESSION_SECRET, `code:${ch.id}:${code}`);
+  const given = await sha256Hex(`code:${ch.id}:${code}`);
   if (!safeEqual(given, ch.code_hash)) {
     await record(c, ip, "code", false);
     const left = CODE_TRIES - (ch.attempts + 1);
