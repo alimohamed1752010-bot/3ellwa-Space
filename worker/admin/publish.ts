@@ -20,6 +20,20 @@ const pageMetaSchema = z.object({
 });
 const json = (value:string|null|undefined) => { try { return value ? JSON.parse(value) : {}; } catch { return {}; } };
 
+publishRoutes.post("/publish/discard", async c => {
+  const db = c.env.DB;
+  await db.batch([
+    db.prepare("UPDATE site_settings SET draft_json=published_json,updated_at=datetime('now') WHERE key='homepage_layout'"),
+    db.prepare("UPDATE themes SET draft_tokens_json=NULL,updated_at=datetime('now') WHERE draft_tokens_json IS NOT NULL"),
+    db.prepare("DELETE FROM page_sections WHERE page_id IN (SELECT id FROM pages WHERE status='draft')"),
+    db.prepare("DELETE FROM pages WHERE status='draft'"),
+    db.prepare("DELETE FROM page_sections WHERE page_id IN (SELECT id FROM pages WHERE status='published') AND published_json IS NULL"),
+    db.prepare("UPDATE page_sections SET draft_json=published_json,deleted_in_draft=0,updated_at=datetime('now') WHERE page_id IN (SELECT id FROM pages WHERE status='published')"),
+    db.prepare("UPDATE pages SET draft_layout_json=layout_json,updated_at=datetime('now') WHERE status='published'"),
+  ]);
+  return c.json({ discarded:true });
+});
+
 publishRoutes.post("/publish", async c => {
   const db = c.env.DB;
   const layoutRow = await db.prepare("SELECT draft_json,published_json,version FROM site_settings WHERE key='homepage_layout'").first<{draft_json:string|null;published_json:string|null;version:number}>();
