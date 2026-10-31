@@ -14,7 +14,7 @@ publicRoutes.get("/site", async (c) => {
   c.header("Cache-Control", "public, max-age=0, must-revalidate");
   let profile = null, social: SocialRow[] = [], nav: NavRow[] = [], theme = await loadPublicTheme(c.env.DB);
   try {
-    const [p, s, n, t] = await Promise.all([
+    const [p, s, n] = await Promise.all([
       loadProfileRow(c.env.DB),
       c.env.DB.prepare("SELECT id, platform, label, url, icon FROM social_links WHERE visible = 1 ORDER BY sort_order, rowid").all<SocialRow>(),
       c.env.DB.prepare(
@@ -22,9 +22,8 @@ publicRoutes.get("/site", async (c) => {
          FROM navigation_items n LEFT JOIN pages pg ON pg.id = n.page_id AND pg.status = 'published' AND pg.visibility = 'public'
          WHERE n.visible = 1 AND n.parent_id IS NULL ORDER BY n.sort_order, n.rowid`
       ).all<NavRow>(),
-      loadPublicTheme(c.env.DB),
     ]);
-    profile = p; social = s.results; nav = n.results; theme = t;
+    profile = p; social = s.results; nav = n.results;
   } catch {
     // fall through to defaults
   }
