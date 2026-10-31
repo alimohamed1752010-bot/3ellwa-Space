@@ -5,7 +5,7 @@ Last reconciled: 2026-10-31
 ## Current verified state
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
-- Latest source changes include domain inventory improvements and SEO privacy hardening. The crawler-visible noindex follow-up (`6d1dc3b`) is newer than the latest confirmed production deployment.
+- Latest source changes include domain inventory improvements, SEO privacy hardening, and a manual GitHub Actions deployment fallback (`.github/workflows/deploy.yml`). The crawler-visible noindex follow-up (`6d1dc3b`) is newer than the latest confirmed production deployment.
 - Latest GitHub CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) completed successfully on commit `7336adcccbde4b9db263a537fbd2677ab3601135`; both typecheck/web/build and local Worker integration jobs passed.
 - Cloudflare Worker: `3ellwa-space`; deployment `d8df80b6-d7f3-4c3a-a2b1-1062044993d8`, version `f3adfe8b-854c-4ad8-b097-52c590b27e74` (version 171), assigned 100% traffic at 16:27 UTC on 2026-10-31.
 - Cron Trigger: `0 * * * *` (hourly UTC).
