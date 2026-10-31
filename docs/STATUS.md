@@ -36,6 +36,8 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
+- CI run [41231191241](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41231191241) passed both jobs on `27a22faffd45c77fcda5fb2b2df3b79c4243f50d`. This includes typecheck, web tests, production build, Worker integration tests, and `bash -n scripts/restore-drill.sh`.
+
 - CI run [41230265602](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41230265602) passed both jobs on `d64241652bb7ca0e0d484e66c2af52892dde9cd4`: typecheck, web tests, production build, local D1 migrations, Worker integration suite, and source artifact upload. The integration suite confirms `/api/admin/domains/audit` requires authentication and returns a bounded list after migration.
 - Production D1 migration `0004_dns_change_audit.sql` was applied at 18:35 UTC and verified: `d1_migrations` reports it as migration id 4 and `sqlite_master` confirms `dns_change_audit` exists. This is an additive schema change; no existing records were modified.
 - Cloudflare Worker version 191 (`90b1fa18-9a63-4e5b-8a1f-b34e7fca140a`) is assigned 100% traffic in deployment `1321df95-00dc-44a3-b37a-94ee18ff193a`. This is deployment metadata, not an authenticated live HTTP check.
@@ -48,7 +50,7 @@ Last reconciled: 2026-10-31
 - Cloudflare API inspection confirms version 172 (`7bd78949-6d07-49c8-9112-18ffadeae561`) is assigned 100% traffic and was built from commit `6d1dc3b`, which contains the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
 
 ## Latest checkpoint
-- Part 9 recovery verification: added `.github/workflows/restore-drill.yml` and `scripts/restore-drill.sh`. The manual drill validates the latest D1 export checksum and gzip stream, restores into a uniquely named disposable D1 database, checks required tables and migration 0004, compares current media object keys/sizes against the backup mirror while allowing intentionally retained historical media, and deletes the disposable database on exit. CI syntax validation is being added. It has not run because the backup secrets and an existing backup object are not yet verified.
+- Part 9 recovery verification: added `.github/workflows/restore-drill.yml` and `scripts/restore-drill.sh`. The manual drill validates the latest D1 export checksum and gzip stream, restores into a uniquely named disposable D1 database, checks required tables and migration 0004, compares current media object keys/sizes against the backup mirror while allowing intentionally retained historical media, and deletes the disposable database on exit. CI syntax validation passed in run [41231191241](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41231191241). The live restore drill has not run because the backup secrets and an existing backup object are not yet verified.
 
 ## Remaining acceptance work
 
