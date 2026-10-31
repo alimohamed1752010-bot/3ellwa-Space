@@ -20,6 +20,7 @@ type DnsCheck = {
 };
 
 type NsCheck = { zone: string; resolver: string; status: number; nameServers: string[]; checkedAt: string; limitation: string };
+type DnsAudit = { id: string; action: "create" | "edit" | "delete"; hostname: string; recordType: string; recordId: string; before: { content: string; name: string } | null; after: { content: string; name: string } | null; createdAt: string };
 
 export default function DomainsScreen() {
   const [data, setData] = useState<DomainData | null>(null);
@@ -32,6 +33,8 @@ export default function DomainsScreen() {
   const [checkingDns, setCheckingDns] = useState("");
   const [nsCheck, setNsCheck] = useState<NsCheck | null>(null);
   const [checkingNs, setCheckingNs] = useState(false);
+  const [auditItems, setAuditItems] = useState<DnsAudit[]>([]);
+  const [auditError, setAuditError] = useState("");
 
   const filteredRecords = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -76,6 +79,16 @@ export default function DomainsScreen() {
     }
   }, []);
 
+  const loadAudit = useCallback(async () => {
+    try {
+      const result = await api.get<{ items: DnsAudit[] }>("/api/admin/domains/audit?limit=50");
+      setAuditItems(result.items);
+      setAuditError("");
+    } catch (e) {
+      setAuditError(e instanceof ApiError ? e.message : "Could not load DNS change history.");
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -90,7 +103,7 @@ export default function DomainsScreen() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); void loadAudit(); }, [load, loadAudit]);
 
   return (
     <div className="rise flex flex-col gap-5">
@@ -158,7 +171,7 @@ export default function DomainsScreen() {
         <Card>
           <CardHeader title="DNS records" description={`${filteredRecords.length} of ${data.records.length} records shown.`} />
           <CardBody className="flex flex-col gap-3">
-            <DnsRecordManager zoneName={data.zone.name} records={data.records} workerDomains={data.workerDomains} onChanged={load} />
+            <DnsRecordManager zoneName={data.zone.name} records={data.records} workerDomains={data.workerDomains} onChanged={async () => { await load(); await loadAudit(); }} />
             <label className="flex flex-col gap-1 text-xs text-muted">
               Search records
               <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Hostname, type, or target" className="w-full rounded-control border border-line bg-raised px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
@@ -172,6 +185,23 @@ export default function DomainsScreen() {
               {dnsChecks[record.name] && <p className="text-xs text-muted sm:col-span-2" role="status">{dnsChecks[record.name].hasAnswer ? "Public DNS answers: " + dnsChecks[record.name].records.filter(item => item.answers.length).map(item => item.type + " " + item.answers.join(", ")).join(" · ") : dnsChecks[record.name].records.some(item => item.status === 3) ? "Public DNS reports NXDOMAIN for this hostname." : "No A, AAAA, or CNAME answer was returned."} · Checked {new Date(dnsChecks[record.name].checkedAt).toLocaleTimeString()}</p>}
             </div>) : <p className="text-sm text-muted">{data.records.length ? "No records match this search." : "No DNS records were returned."}</p>}
             {copied && <p className="text-xs text-success" role="status">Copied to clipboard.</p>}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="DNS change history" description="Recent changes submitted through this dashboard. External Cloudflare edits are not included." />
+          <CardBody className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted">Latest {auditItems.length} recorded changes</p>
+              <Button size="sm" variant="secondary" onClick={() => void loadAudit()}>Refresh history</Button>
+            </div>
+            {auditError && <p role="alert" className="text-xs text-danger">{auditError}</p>}
+            {auditItems.length ? auditItems.map(item => <div key={item.id} className="flex flex-col gap-1 border-b border-line pb-3 last:border-0 last:pb-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium">{item.action.toUpperCase()} · {item.hostname}</p>
+                <span className="text-xs text-muted">{new Date(item.createdAt.replace(" ", "T") + (item.createdAt.endsWith("Z") ? "" : "Z")).toLocaleString()}</span>
+              </div>
+              <p className="font-mono text-xs text-muted">{item.recordType} · {item.before ? item.before.content + " → " : ""}{item.after?.content ?? "record removed"}</p>
+            </div>) : !auditError ? <p className="text-sm text-muted">No DNS changes have been recorded yet.</p> : null}
           </CardBody>
         </Card>
         <p className="text-xs text-muted">DNS writes are restricted to supported subdomain records and require a fresh preview plus explicit confirmation. Public DNS checks query Cloudflare's 1.1.1.1 resolver; they do not guarantee that every network has received the same result. Last inventory check {new Date(data.checkedAt).toLocaleString()}.</p>
