@@ -1,0 +1,99 @@
+name: Daily Cloudflare backups
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Export D1 and mirror media to private R2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      D1_DATABASE_ID: "0eae0026-1bb4-4fea-96e3-eb534619293b"
+      MEDIA_BUCKET: "3ellwa-space-media"
+      BACKUP_BUCKET: "3ellwa-space-backups"
+    steps:
+      - name: Validate backup credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in CF_ACCOUNT_ID CF_API_TOKEN R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required repository secret: $name"
+              exit 1
+            fi
+          done
+
+      - name: Configure R2 S3 credentials
+        shell: bash
+        run: |
+          {
+            echo "AWS_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID"
+            echo "AWS_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY"
+            echo "AWS_DEFAULT_REGION=auto"
+          } >> "$GITHUB_ENV"
+
+      - name: Export D1 and store a compressed snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/export"
+          auth=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
+          response="$(curl --fail --silent --show-error -X POST "$api" "${auth[@]}" --data '{"output_format":"polling"}')"
+          bookmark="$(jq -er '.result.at_bookmark' <<< "$response")"
+          complete=""
+          for attempt in $(seq 1 60); do
+            response="$(curl --fail --silent --show-error -X POST "$api" "${auth[@]}" --data "$(jq -nc --arg bookmark "$bookmark" '{output_format:"polling",current_bookmark:$bookmark}')")"
+            status="$(jq -er '.result.status' <<< "$response")"
+            if [[ "$status" == "complete" ]]; then
+              complete="$response"
+              break
+            fi
+            if [[ "$status" == "error" ]]; then
+              jq -r '.result.error // "D1 export failed"' <<< "$response"
+              exit 1
+            fi
+            sleep 10
+          done
+          if [[ -z "$complete" ]]; then
+            echo "::error::D1 export did not complete within the polling window."
+            exit 1
+          fi
+          signed_url="$(jq -er '.result.result.signed_url' <<< "$complete")"
+          export_name="$(jq -er '.result.result.filename' <<< "$complete")"
+          curl --fail --silent --show-error "$signed_url" -o "$export_name"
+          gzip -9 "$export_name"
+          stamp="$(date -u +'%Y%m%dT%H%M%SZ')"
+          endpoint="https://$CF_ACCOUNT_ID.r2.cloudflarestorage.com"
+          aws s3 cp "$export_name.gz" "s3://$BACKUP_BUCKET/d1/$stamp-$export_name.gz" --endpoint-url "$endpoint" --only-show-errors
+
+      - name: Mirror uploaded media objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://$CF_ACCOUNT_ID.r2.cloudflarestorage.com"
+          aws s3 sync "s3://$MEDIA_BUCKET/" "s3://$BACKUP_BUCKET/media/" --endpoint-url "$endpoint" --only-show-errors
+
+      - name: Prune D1 exports older than 30 days
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://$CF_ACCOUNT_ID.r2.cloudflarestorage.com"
+          cutoff="$(date -u -d '30 days ago' +'%Y-%m-%dT%H:%M:%S')"
+          keys="$(aws s3api list-objects-v2 --bucket "$BACKUP_BUCKET" --prefix "d1/" --endpoint-url "$endpoint" --output json | jq -r --arg cutoff "$cutoff" '.Contents[]? | select(.LastModified < $cutoff) | .Key')"
+          while IFS= read -r key; do
+            [[ -z "$key" ]] || aws s3 rm "s3://$BACKUP_BUCKET/$key" --endpoint-url "$endpoint" --only-show-errors
+          done <<< "$keys"
