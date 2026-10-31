@@ -5,6 +5,9 @@ import { mediaUrl } from "../lib/media";
 import { loadPublicTheme } from "../lib/theme";
 
 export const publicRoutes = new Hono<AppEnv>();
+const DEFAULT_HOME_LAYOUT = { sections: [{id:"profile",type:"profile",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true},{id:"links",type:"links",title:"",body:"",assetId:null,widgetId:null,enabled:true,visibleDesktop:true,visibleMobile:true}] };
+function parseHomeLayout(raw:string|null|undefined) { try { const v=raw?JSON.parse(raw):null; if(!v||!Array.isArray(v.sections)) return DEFAULT_HOME_LAYOUT; return {sections:v.sections.filter((s:any)=>s&&typeof s.id==="string"&&typeof s.type==="string"&&s.enabled!==false).map((s:any)=>({id:s.id,type:s.type,title:typeof s.title==="string"?s.title:"",body:typeof s.body==="string"?s.body:"",assetId:typeof s.assetId==="string"?s.assetId:null,widgetId:typeof s.widgetId==="string"?s.widgetId:null,enabled:s.enabled!==false,visibleDesktop:s.visibleDesktop!==false,visibleMobile:s.visibleMobile!==false}))}; } catch { return DEFAULT_HOME_LAYOUT; } }
+
 
 interface SocialRow { id: string; platform: string; label: string | null; url: string; icon: string | null }
 interface NavRow { id: string; label: string; target_type: string; url: string | null; open_new_tab: number; page_slug: string | null; page_home: number | null }
@@ -12,9 +15,9 @@ interface NavRow { id: string; label: string; target_type: string; url: string |
 // Public data only: no draft fields, no ids of private things, no timestamps. Empty database returns defaults, never an error.
 publicRoutes.get("/site", async (c) => {
   c.header("Cache-Control", "public, max-age=0, must-revalidate");
-  let profile = null, social: SocialRow[] = [], nav: NavRow[] = [], theme = await loadPublicTheme(c.env.DB);
+  let profile = null, social: SocialRow[] = [], nav: NavRow[] = [], theme = await loadPublicTheme(c.env.DB), layout = DEFAULT_HOME_LAYOUT;
   try {
-    const [p, s, n] = await Promise.all([
+    const [p, s, n, l] = await Promise.all([
       loadProfileRow(c.env.DB),
       c.env.DB.prepare("SELECT id, platform, label, url, icon FROM social_links WHERE visible = 1 ORDER BY sort_order, rowid").all<SocialRow>(),
       c.env.DB.prepare(
@@ -22,8 +25,9 @@ publicRoutes.get("/site", async (c) => {
          FROM navigation_items n LEFT JOIN pages pg ON pg.id = n.page_id AND pg.status = 'published' AND pg.visibility = 'public'
          WHERE n.visible = 1 AND n.parent_id IS NULL ORDER BY n.sort_order, n.rowid`
       ).all<NavRow>(),
+      c.env.DB.prepare("SELECT published_json FROM site_settings WHERE key='homepage_layout'").first<{published_json:string|null}>(),
     ]);
-    profile = p; social = s.results; nav = n.results;
+    profile = p; social = s.results; nav = n.results; layout = parseHomeLayout(l?.published_json);
   } catch {
     // fall through to defaults
   }
@@ -56,6 +60,7 @@ publicRoutes.get("/site", async (c) => {
       .filter((r) => r.href),
     site: { title: profile?.display_name || "3ellwa.space" },
     theme,
+    layout,
   });
 });
 
