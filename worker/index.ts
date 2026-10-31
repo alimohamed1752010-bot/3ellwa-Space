@@ -22,6 +22,8 @@ import { publicIntegrationRoutes } from "./public/integrations";
 import { publicAnalyticsRoutes } from "./public/analytics";
 import { guestbookAdminRoutes } from "./admin/guestbook";
 import { publicGuestbookRoutes } from "./public/guestbook";
+import { announcementRoutes } from "./admin/announcements";
+import { publicAnnouncementRoutes } from "./public/announcements";
 import { mediaPublicRoutes } from "./public/media";
 import { goRoutes, publicLinkRoutes } from "./public/links";
 
@@ -63,6 +65,7 @@ app.route("/api/admin", widgetRoutes);
 app.route("/api/admin", integrationRoutes);
 app.route("/api/admin", analyticsRoutes);
 app.route("/api/admin", guestbookAdminRoutes);
+app.route("/api/admin", announcementRoutes);
 
 app.route("/api/public", publicRoutes);
 app.route("/api/public", publicProjectRoutes);
@@ -70,6 +73,7 @@ app.route("/api/public", publicWidgetRoutes);
 app.route("/api/public", publicIntegrationRoutes);
 app.route("/api/public", publicAnalyticsRoutes);
 app.route("/api/public", publicGuestbookRoutes);
+app.route("/api/public", publicAnnouncementRoutes);
 app.route("/api/public", publicLinkRoutes);
 app.route("/go", goRoutes);
 app.route("/media", mediaPublicRoutes);
