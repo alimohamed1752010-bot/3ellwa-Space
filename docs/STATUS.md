@@ -15,6 +15,10 @@ Last reconciled: 2026-10-31
 - Production backup workflow is committed but no successful backup has been verified. The four GitHub Actions secrets in `docs/BACKUP.md` remain required.
 - Full authenticated browser/visual acceptance has not been completed.
 
+## Latest checkpoint
+
+- Privacy default hardening: SEO settings now default to search indexing disabled. Integration coverage verifies default robots.txt and sitemap behavior before explicitly enabling indexing.
+
 ## Implemented
 
 - Parts 1 through 8: core site, admin, links, pages, projects, themes, layout, widgets, GitHub/Minecraft integrations, analytics, guestbook, announcements, SEO and indexing.
