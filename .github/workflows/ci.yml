@@ -41,6 +41,15 @@ jobs:
           node --check scripts/part7-test.mjs
       - name: Build production web assets
         run: npm run build:web
+      - name: Create source archive
+        run: git archive --format=zip --output="3ellwa-space-${GITHUB_SHA::7}.zip" HEAD
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3ellwa-space-source-${{ github.sha }}
+          path: 3ellwa-space-${GITHUB_SHA::7}.zip
+          if-no-files-found: error
+          retention-days: 7
 
   worker-integration:
     name: Local Worker integration tests
