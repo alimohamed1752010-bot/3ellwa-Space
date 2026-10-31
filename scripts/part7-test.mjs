@@ -40,7 +40,10 @@ r=await call("DELETE",`/api/admin/widgets/${duplicate.id}`);check("delete duplic
 r=await call("DELETE",`/api/admin/widgets/${created.id}`);check("delete original widget",r.status===200,r.status);
 await call("PUT","/api/admin/layout/draft",original);await call("POST","/api/admin/publish",{});
 const githubSave=await call("PUT","/api/admin/integrations/github",{enabled:false,config:{username:"octocat"}});
+const githubResult=await githubSave.json();
 check("save public GitHub integration settings",githubSave.status===200,githubSave.status);
+const untestedWidget=await call("POST","/api/admin/widgets",{name:"Untested GitHub",type:"github",integrationId:githubResult.item.id,enabled:true,displayMode:"card",visibleDesktop:true,visibleMobile:true,refreshSeconds:300,config:{}});
+check("reject widget linked to an untested integration",untestedWidget.status===400,untestedWidget.status);
 const githubPublic=await call("GET","/api/public/integrations/github/data");
 check("disabled integration data is not public",githubPublic.status===404,githubPublic.status);
 const badGithub=await call("PUT","/api/admin/integrations/github",{enabled:true,config:{username:"not a valid username"}});
