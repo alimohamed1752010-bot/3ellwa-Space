@@ -1,35 +1,75 @@
-# 3ellwa.space, Part 10: Subdomains and domain management
+# DECISIONS
+Settled choices. A new chat must not reopen these unless the owner asks.
 
-You are a senior full-stack developer continuing an existing project. The owner is building this step by step with you and runs every command himself, so give exact commands and say what output to expect.
+1. Single owner, no registration, no multi-user code.
+2. One repo, one Cloudflare Worker serving both the API and the built frontend (Workers Static Assets). One deploy, same-origin cookies, no CORS.
+3. Stack: React, TypeScript, Vite, Tailwind (frontend); Hono (API router); zod (validation); D1; R2; dnd-kit (drag and drop); React Router.
+4. Deploys go GitHub then Cloudflare. The owner runs all commands step by step with the assistant.
+5. Main domain 3ellwa.space only. Subdomains and the domain manager are Part 10, later.
+6. Auth: hidden admin path (secret ADMIN_PATH, unlinked, noindex, plain 404 for wrong paths), then the plain ADMIN_PASSWORD, then a mandatory one-time code delivered by DISCORD_AUTH_WEBHOOK_URL.
+   - No password hash, SESSION_SECRET, or OTP bypass is required.
+   - Only after a correct password does the Worker create an 8-digit code, store its SHA-256 digest in D1, and post it to the private Discord webhook. Code lasts 5 minutes, works once, 5 tries.
+   - Session: random 256-bit token in an HttpOnly, Secure, SameSite=Strict cookie. Only its SHA-256 digest is stored in D1, with an expiry. Optional trust-this-device for 30 days.
+   - Lockout and rate limiting use the auth_attempts table. Failed password attempts and invalid codes are reported to Discord.
+   - Discord delivery failure blocks login; there is no password-only fallback.
+   - Cloudflare Access can be added in front later without rewriting anything.
+7. No admin_users table: the single credential lives in secrets. The tables sessions, auth_challenges, and auth_attempts replace it. This deviates from the master prompt's entity list on purpose.
+8. Draft and publish: layout, theme, page, and section data keep draft_json and published_json. Publishing copies draft to published and bumps a version number. The public site reads published only. Undo and redo live in the browser editor state. Profile, links, projects, and media save live.
+9. theme_settings and widget_settings exist as key/value tables as the master prompt lists them. Large flexible config uses JSON columns; core entities have real columns.
+10. Third-party credentials are stored in the integrations table encrypted with AES-GCM using the ENCRYPTION_KEY secret. They never reach the frontend.
+11. Discord presence: use the Lanyard API unless the owner prefers their own bot. Decide in Part 7.
+12. Work is delivered in small checkpoints (a zip per sub-step) so the owner does not hit usage limits mid-part.
+13. Part 2 is split. 1.5 = scaffold + auth backend (done). 2 = UI shells, components, deploy walkthrough (next chat, prompts/part-02b.md).
+14. Worker runs first for every request (assets.run_worker_first, html_handling none) so unknown paths return a real 404 status instead of the SPA fallback 200. Wrong admin path and any unknown path take the same code branch.
+15. The Worker tells the React app which shell to render by replacing <!--SHELL_BOOT--> in index.html with meta tags (3w-shell, 3w-base). No inline script, so a CSP can be added later. The admin path appears only in the admin response.
+16. Lockout: 5 failures per kind (password, code) per IP hash in 15 minutes, then 429 with Retry-After. A code has 5 tries, 5 minutes, one use. A new password success voids older unused codes. IP is stored as a SHA-256 digest.
+17. Session lifetime 12 hours, or 30 days with trust-this-device. Cookie name __Host-3w_session on HTTPS, 3w_session on http://localhost only. Stored hash is SHA-256(token).
+18. CSRF: SameSite=Strict plus an Origin check on non-GET /api requests.
+19. If Discord rejects the code message the challenge is deleted and the API answers 502. Failed passwords, lockouts, and wrong codes also ping the webhook.
+20. Tailwind v4 via @tailwindcss/vite (no tailwind.config file; tokens live in @theme in apps/web/src/index.css).
+21. Admin UI is a lazy-loaded chunk; the public entry only imports the public app. Modal uses the native <dialog> element for focus trap and Esc handling. Toasts are announced via aria-live.
+22. Login keeps the typed password after a wrong attempt (so typos are fixable) and clears it on success. A dead code (expired, used, or out of tries) returns the user to the password step.
+23. UI logic is tested with vitest + jsdom and a mocked fetch (`npm run test:web`). Real-browser and visual checks are the owner's until a browser test setup is added (Part 9 candidate).
+24. Admin nav items are defined once in apps/web/src/admin/nav.ts with the part that delivers each screen; later parts replace the EmptyScreen per route.
+25. Old Part 3 is split: Part 2.5 = profile, social links, /api/public/site, navigation, avatar/banner upload (prompts/part-02-5.md); Part 3 = links manager, /go tracking, /links page (prompts/part-03.md). Admin nav labels say "Part 2.5" for Profile and Navigation.
+26. Part 2.5 images: type is detected from file bytes, never the client type; SVG is refused (script risk). Limits avatar 2 MB, banner 5 MB. Files live in R2 at media/<id>/<name>, served at /media/:id/:name with immutable caching (ids are never reused; replacing makes a new id).
+27. Social links, navigation, and media save live; the profile form saves on an explicit Save with an unsaved-changes guard (DECISIONS item 8 allows live saves, a form needs a commit point).
+28. Reordering uses up/down buttons (accessible, works on touch) instead of dnd-kit for now.
+29. Public /api/public/site exposes only public fields: hidden social links, hidden menu items, and hidden location/time are not sent; online mode "auto" is sent as "hidden" until Part 7.
+30. Admin API 401 anywhere in the UI returns to the login screen (shared handler in shared/api.ts).
+31. Links (Part 3) need no new migration: the links, link_categories, and analytics_events tables from 0001 already fit. A click is an analytics_events row with type 'link_click'; per-link stats are queries over it (no counters on the link row).
+32. Public links never expose the destination URL: the public API returns /go/:id as the href. GET /go/:id re-checks the stored URL with the same rule used on save (http, https, mailto; no spaces, backslashes, or embedded credentials; max 2000 chars) and refuses anything not live (disabled, hidden, not yet published, expired, category hidden) with a plain 404 page.
+33. Click tracking uses no cookies and stores no raw IP: visitor_hash is SHA-256(ip|user-agent|UTC day), truncated, so it rotates daily and counts unique visitors per day only. Counting runs in waitUntil and can never block or fail the redirect. HEAD requests are not counted. Same-site referrers are stored as null.
+34. Schedule times are stored in UTC as "YYYY-MM-DD HH:MM:SS" (same format as datetime('now')) and compared in SQL; the admin edits them in the browser's local time and the API speaks ISO strings.
+35. Reordering uses dnd-kit on a dedicated handle (pointer + keyboard sensors) and persists the full link order in one request; the optimistic order is rolled back on failure. This supersedes item 28 for links only; navigation and social links keep up/down buttons.
+36. Import is all-or-nothing: the whole file is validated first and written in one D1 batch. Categories are matched by name (case-insensitive) and created when missing. Export contains no ids and no images.
+37. Link images use the existing upload route with purpose=link (1 MB limit); /media serving is unchanged.
+38. Admin API keeps item 8's rule for links: they save live (no draft/publish). Hover animation, badge, colors, and icon are per-link fields; the icon is free text (usually an emoji), not an icon library.
+39. Links screen filters are client-side over the full list (max 1000 links); the list endpoint returns everything with click totals in one query.
+40. Media library (Part 4) accepts the same four image types as before (PNG, JPEG, WebP, GIF, detected from bytes; SVG still refused). Video and other kinds wait for Part 5 (background video). Library uploads allow 8 MB; avatar 2, banner 5, link 1 are unchanged.
+41. Folders are one level deep (no nesting), unique by name ignoring case, max 50. Deleting a folder never deletes images; they become unfiled.
+42. "Replace file" keeps the asset id, so every reference (profile, links, pages, projects) keeps working. Because files are immutable-cached, replacing also gives the file a new cache tag in its name (photo~a1b2c3.png). Renaming keeps the tag, so an old cached URL is never reused for new bytes. This refines decision 26 (ids never reused) without changing /media serving. The admin UI hides the tag.
+43. Content that stores image references must store the asset id, never a URL (links, pages, projects already do). Page blocks will use "assetId" inside their JSON; mediaUsage finds them by searching the section JSON for the id.
+44. Delete is not blocked when an image is in use. The UI shows where it is used first (GET /media/:id/usage) and asks to confirm; the API itself deletes (foreign keys clear the references).
+45. Image dimensions are read on the server from the file bytes (worker/lib/imageSize.ts), never trusted from the client.
+46. Client-side processing: single uploads open a crop editor (drag to position, zoom, aspect presets, max size, WebP/JPEG/PNG, quality); multi-file uploads are shrunk quietly (longer side 2560, WebP) only when over 300 KB and only if that makes the file smaller. GIFs are never re-encoded.
+47. MediaPicker (admin/media/MediaPicker.tsx) is the one way any screen chooses an existing image. Uploading inside the picker with exactly one file selects it immediately.
 
-## Read first, in this order
-1. docs/PROJECT.md (the full specification)
-2. docs/STATUS.md (where the project stands)
-3. docs/DECISIONS.md (settled choices, do not reopen)
-4. docs/ARCHITECTURE.md, docs/SCHEMA.md, docs/API.md, migrations/
+41. Custom pages use draft/published section JSON. Only published pages with public visibility are served; hidden pages return 404. Page indexing defaults off, and public page metadata respects the per-page indexable setting. Navigation may target either a validated URL/path or a published public page; drafts and hidden pages cannot be selected.
+48. Projects are managed as structured records with separate project_links and project_gallery rows. Images are referenced by media asset id. Project slugs are unique across both projects and custom pages; /projects is reserved for the built-in directory. Public routes show only visible, non-archived projects. Duplicates start hidden and unfeatured; project changes save immediately without a draft/publish workflow.
 
-If a file is missing or contradicts another, say so before writing code.
+49. Part 9 security baseline: all responses receive nosniff, frame-deny, Permissions Policy, and COOP headers; HTML receives a same-origin-first CSP; HTTPS receives HSTS. Existing stricter media CSP and route-specific referrer policy are preserved. Supplied Origin headers must exactly match the request origin.
+50. Production backups use a separate private R2 bucket, `3ellwa-space-backups`, not the live media bucket. A GitHub Actions workflow exports D1 SQL daily, mirrors R2 media objects, retains SQL exports for 30 days, and requires narrowly scoped repository secrets before activation.
+51. Never test a destructive D1 restore on the production database. Restore drills use a disposable database; production recovery requires a fresh export, a confirmed bookmark, and an explicit operator decision.
 
-## Scope of this part
-- Domain manager: list known subdomains and destinations, show DNS status, create and edit supported DNS records through the Cloudflare API, check connectivity, setup instructions.
-- The Cloudflare API token is a Worker secret and never reaches the browser. Use the narrowest token permissions possible.
-- Subdomains are independent services; only point records at them.
+52. Global search indexing defaults to disabled. `robots.txt` disallows crawling and `sitemap.xml` returns 404 until the owner explicitly enables indexing; noindex is a privacy preference, not access control.
 
-## Out of scope
-Everything not listed above. If you see a need outside scope, note it in docs/STATUS.md instead of building it.
+53. When global indexing is disabled, `robots.txt` must still allow crawlers to fetch public pages so they can observe the `X-Robots-Tag: noindex, nofollow` response header and HTML robots meta tag. It continues to disallow `/api/` and `/admin/`, and omits the sitemap. A blanket `Disallow: /` would prevent crawlers from seeing noindex and can leave known URLs indexed without descriptions.
 
-## Acceptance checklist
-- Records can be listed, created, edited, and deleted from the admin panel.
-- Token never exposed.
-- Failed API calls show clear errors.
+54. Part 10 DNS diagnostics are read-only. The admin endpoint accepts only subdomains of the configured zone and queries A, AAAA, and CNAME records through Cloudflare public DNS (1.1.1.1). This reports one resolver view, not global propagation or HTTP service health. DNS mutations are implemented separately with preview and explicit confirmation; no external hostname can be queried through the diagnostics endpoint.
 
-## Working rules
-- Work in small checkpoints. After each one, give a zip of the repo so the owner never loses progress to a usage limit.
-- Keep replies short. No long recaps. Do not claim something works unless you ran or tested it; say plainly what you could not test and give the owner a verification step instead.
-- Never hardcode personal data. Everything comes from the database with sensible defaults.
-- Secrets never reach the frontend or the repo.
-- Schema changes go in a new numbered migration, never by editing an applied one. Keep docs/SCHEMA.md and docs/API.md accurate.
-- Respect the design direction in docs/PROJECT.md section 2.
+55. Part 10 DNS writes are restricted to A, AAAA, and CNAME records on subdomains. The zone apex, standard service hostnames, unsupported types, and Cloudflare Worker custom domains are protected. Every create/edit/delete requires a two-minute HMAC preview token bound to the current record snapshot, a matching hostname confirmation, and an explicit UI confirmation. CNAME conflicts are rejected. Audit logs record the action, hostname, type, and record id, never the API token.
 
-## Before you finish
-Update docs/STATUS.md (done, in progress, next, known issues, environment facts) and docs/DECISIONS.md (new decisions), then deliver the final zip.
+55. Part 10 public NS diagnostics query the configured zone through Cloudflare Public DNS and compare the recursive resolver answer with the nameservers assigned by Cloudflare. The UI must describe this as resolver-visible NS data, not registrar parent-zone delegation or a global propagation guarantee.
+
+56. DNS changes made through the domain manager are recorded in an append-only D1 audit table with before/after snapshots. The audit is not a complete Cloudflare account history: edits made outside this app are not captured. A successful Cloudflare write is never represented as failed solely because the subsequent audit insert failed; the API returns `auditRecorded: false` and the UI warns the owner.
