@@ -23,7 +23,7 @@ async function cloudflareList<T>(token: string, path: string): Promise<T[]> {
     if (!response.ok || !body?.success || !Array.isArray(body.result)) {
       const message = body?.errors?.map(x => x.message).filter(Boolean).join(" ") || "Cloudflare API request failed.";
       throw new Error(response.status === 403
-        ? "The Cloudflare token needs Zone Read and DNS Read on the 3ellwa.space zone, plus Workers Scripts Read on the account."
+        ? "The Cloudflare token needs Zone Read, DNS Read, and DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the account."
         : message);
     }
     items.push(...body.result);
@@ -80,7 +80,7 @@ domainRoutes.get("/domains", async c => {
   const accountId = c.env.CF_ACCOUNT_ID;
   const zoneName = c.env.CF_ZONE_NAME || "3ellwa.space";
   if (!token || !accountId) {
-    return apiError(c, 502, "setup_required", "Domain manager needs the CF_API_TOKEN Worker secret. The token requires Zone Read and DNS Read on the 3ellwa.space zone, plus Workers Scripts Read on the Cloudflare account.");
+    return apiError(c, 502, "setup_required", "Domain manager needs the CF_API_TOKEN Worker secret. The token requires Zone Read, DNS Read, and DNS Edit on the 3ellwa.space zone, plus Workers Scripts Read on the Cloudflare account.");
   }
   try {
     const zoneQuery = "/zones?name=" + encodeURIComponent(zoneName) + "&account.id=" + encodeURIComponent(accountId);
