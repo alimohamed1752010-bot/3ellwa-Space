@@ -1,5 +1,5 @@
 import http from "node:http";
-// LOCAL ONLY test of Part 4 routes (media library now; pages and projects are added in later checkpoints).
+// LOCAL ONLY test of Part 4 routes (media library, custom pages, and navigation).
 // Needs ADMIN_PASSWORD + DISCORD_AUTH_WEBHOOK_URL=http://127.0.0.1:9999/hook, local D1 migrated, and `npm run dev` running.
 // node scripts/part4-test.mjs [baseUrl] "test password"
 const base = (process.argv[2] ?? "http://localhost:8787").replace(/\/$/, "");
@@ -177,6 +177,39 @@ check("link image reference cleared, link kept", list.items.find((x) => x.id ===
 r = await call("DELETE", `/api/admin/media/${A.id}`); check("delete again -> 404", r.status === 404, r.status);
 await call("DELETE", `/api/admin/media/${av.asset.id}`);
 await call("DELETE", `/api/admin/links/${L.id}`);
+
+// --- custom pages
+let pageResponse = await call("POST", "/api/admin/pages", { title: `Test page ${tag}` });
+let pageItem = (await pageResponse.json()).item;
+check("create page as draft", pageResponse.status === 201 && pageItem?.status === "draft" && !!pageItem.slug, pageResponse.status);
+const pageDraft = { title: pageItem.title, slug: pageItem.slug, metaTitle: "Test page metadata", metaDescription: "A custom page test", visibility: "public", indexable: false, sections: [{ type: "text", title: "Hello", body: "Published page content", url: "", assetId: "" }] };
+pageResponse = await call("PUT", `/api/admin/pages/${pageItem.id}/draft`, pageDraft);
+check("save page draft with a content block", pageResponse.status === 200 && (await pageResponse.json()).item.sections.length === 1, pageResponse.status);
+pageResponse = await call("POST", `/api/admin/pages/${pageItem.id}/publish`);
+pageItem = (await pageResponse.json()).item;
+check("publish page", pageResponse.status === 200 && pageItem.status === "published", pageResponse.status);
+let publicPage = await fetch(base + `/api/public/pages/${pageItem.slug}`);
+let publicData = (await publicPage.json()).page;
+check("public page endpoint exposes published content only", publicPage.status === 200 && publicData?.sections?.[0]?.body === "Published page content" && publicData.indexable === false, publicPage.status);
+pageResponse = await call("PUT", `/api/admin/pages/${pageItem.id}/draft`, { ...pageDraft, title: "Unpublished draft title", sections: [{ type: "text", title: "Draft", body: "Draft must stay private", url: "", assetId: "" }] });
+publicPage = await fetch(base + `/api/public/pages/${pageItem.slug}`);
+publicData = (await publicPage.json()).page;
+check("public page does not leak unpublished draft edits", publicPage.status === 200 && publicData?.title === pageDraft.title && publicData?.sections?.[0]?.body === "Published page content");
+pageResponse = await call("POST", `/api/admin/pages/${pageItem.id}/publish`);
+pageItem = (await pageResponse.json()).item;
+
+// --- navigation page destinations
+let navResponse = await call("POST", "/api/admin/navigation", { label: "Test page link", targetType: "page", pageId: pageItem.id, url: null, openNewTab: false, visible: true });
+let navItems = (await navResponse.json()).items;
+const pageNav = navItems.find((x) => x.label === "Test page link");
+check("navigation can target a published page", navResponse.status === 201 && pageNav?.targetType === "page" && pageNav?.pageId === pageItem.id, navResponse.status);
+let siteData = (await (await fetch(base + "/api/public/site")).json());
+check("public navigation resolves page destination", siteData.navigation.some((x) => x.label === "Test page link" && x.href === "/" + pageItem.slug));
+navResponse = await call("PUT", `/api/admin/navigation/${pageNav.id}`, { label: "Test page link", targetType: "page", pageId: pageItem.id, url: null, openNewTab: false, visible: false });
+siteData = await (await fetch(base + "/api/public/site")).json();
+check("hidden page navigation item is omitted publicly", navResponse.status === 200 && !siteData.navigation.some((x) => x.label === "Test page link"));
+await call("DELETE", `/api/admin/navigation/${pageNav.id}`);
+await call("DELETE", `/api/admin/pages/${pageItem.id}`);
 
 check("cross-origin POST refused (403)", (await fetch(base + "/api/admin/media/folders", { method: "POST", headers: { ...H, origin: "https://evil.example" }, body: JSON.stringify({ name: "x" }) })).status === 403);
 
