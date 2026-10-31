@@ -6,8 +6,8 @@ Last reconciled: 2026-10-31
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
 - Latest source changes include domain inventory improvements, SEO privacy hardening, and a manual GitHub Actions deployment fallback (`.github/workflows/deploy.yml`). The crawler-visible noindex follow-up (`6d1dc3b`) is newer than the latest confirmed production deployment.
-- Latest GitHub CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) completed successfully on commit `7336adcccbde4b9db263a537fbd2677ab3601135`; both typecheck/web/build and local Worker integration jobs passed.
-- Cloudflare Worker: `3ellwa-space`; deployment `d8df80b6-d7f3-4c3a-a2b1-1062044993d8`, version `f3adfe8b-854c-4ad8-b097-52c590b27e74` (version 171), assigned 100% traffic at 16:27 UTC on 2026-10-31.
+- Latest GitHub CI run [41221123237](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41221123237) completed successfully on commit `28a49ce864dda67bcde290446cc4851c57322d3c`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed.
+- Cloudflare Worker: `3ellwa-space`; latest deployment `0c68b9b2-1cc8-4ca2-bffa-5dfc31307f04`, version `7bd78949-6d07-49c8-9112-18ffadeae561` (version 172), assigned 100% traffic at 16:31 UTC on 2026-10-31. This predates the later crawler-visible noindex correction.
 - Cron Trigger: `0 * * * *` (hourly UTC).
 - Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
 - Public domain: https://3ellwa.space.
@@ -31,10 +31,10 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
-- CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) passed both jobs before the recent Part 10 and SEO privacy changes. No CI result is available for the latest commits.
+- CI run [41221123237](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41221123237) passed both jobs on the latest checked `main` commit at reconciliation, including local Worker integration tests.
 - Cloudflare API inspection confirmed the Worker, hourly schedule, D1/R2 bindings, and the separate backup bucket.
 - Cloudflare API inspection confirmed no backup objects currently exist under `d1/` or `media/`.
-- Cloudflare API inspection confirms version 171 (`f3adfe8b-854c-4ad8-b097-52c590b27e74`) is assigned 100% traffic. It was created after the default-indexing code commit, but before the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
+- Cloudflare API inspection confirms version 172 (`7bd78949-6d07-49c8-9112-18ffadeae561`) is assigned 100% traffic. It predates the crawler-visible noindex correction. Production D1 confirms indexing is currently disabled. The public site could not be reached from the connected runtime for an HTTP header check.
 
 ## Remaining acceptance work
 
