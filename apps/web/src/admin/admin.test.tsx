@@ -104,13 +104,13 @@ describe("AdminApp", () => {
     expect(screen.queryByRole("navigation", { name: "Admin" })).toBeNull();
   });
 
-  it("signed-in session shows all 14 nav items, and logout returns to login", async () => {
+  it("signed-in session shows all 15 nav items, and logout returns to login", async () => {
     routes["GET /api/auth/me"] = { body: { authenticated: true } };
     routes["POST /api/auth/logout"] = { body: { ok: true } };
     const u = userEvent.setup();
     render(<AdminApp basename="/" />);
     const navs = await screen.findAllByRole("navigation", { name: "Admin" });
-    expect(navs[0].querySelectorAll("a")).toHaveLength(14);
+    expect(navs[0].querySelectorAll("a")).toHaveLength(15);
     expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
     await u.click(screen.getAllByRole("link", { name: "Pages" })[0]);
     expect(await screen.findByRole("heading", { name: "Pages" })).toBeInTheDocument();
