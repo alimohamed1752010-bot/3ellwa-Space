@@ -1,0 +1,16 @@
+import { useEffect, useState } from "react";
+import { api, ApiError } from "../shared/api";
+import { Button, Card, CardBody, Select, useToast } from "../shared/ui";
+
+type Entry={id:string;name:string;message:string;status:"pending"|"approved"|"rejected";createdAt:string};
+export default function GuestbookScreen(){
+ const toast=useToast();const [items,setItems]=useState<Entry[]>([]);const [status,setStatus]=useState("pending");const [loading,setLoading]=useState(true);const [error,setError]=useState("");
+ async function load(){setError("");setLoading(true);try{const r=await api.get<{items:Entry[]}>(`/api/admin/guestbook?status=${status}`);setItems(r.items);}catch(e){setError(e instanceof ApiError?e.message:"Could not load guestbook entries.");}finally{setLoading(false);}}
+ useEffect(()=>{void load();},[status]);
+ async function moderate(item:Entry,next:Entry["status"]){try{await api.put(`/api/admin/guestbook/${item.id}/status`,{status:next});setItems(old=>status==="all"?old.map(x=>x.id===item.id?{...x,status:next}:x):old.filter(x=>x.id!==item.id));toast.show(`Entry marked ${next}.`,"success");}catch(e){toast.show(e instanceof ApiError?e.message:"Could not update entry.","error");}}
+ async function remove(item:Entry){if(!window.confirm("Permanently delete this guestbook entry?"))return;try{await api.del(`/api/admin/guestbook/${item.id}`);setItems(old=>old.filter(x=>x.id!==item.id));toast.show("Entry deleted.","success");}catch(e){toast.show(e instanceof ApiError?e.message:"Could not delete entry.","error");}}
+ return <div className="rise"><div className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-xl font-medium">Guestbook</h1><p className="mt-1 text-sm text-muted">Review visitor messages before they appear publicly.</p></div><Select aria-label="Filter entries" value={status} onChange={e=>setStatus(e.target.value)}><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="all">All entries</option></Select></div>
+ {error&&<p role="alert" className="mt-4 text-sm text-danger">{error} <Button size="sm" variant="secondary" onClick={()=>void load()}>Retry</Button></p>}
+ {loading?<p className="mt-5 text-sm text-muted">Loading entries…</p>:items.length===0?<Card className="mt-5"><CardBody><p className="text-sm text-muted">No {status==="all"?"":status+" "}entries.</p></CardBody></Card>:<div className="mt-5 flex flex-col gap-3">{items.map(item=><Card key={item.id}><CardBody><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-medium">{item.name}</h2><p className="text-xs text-muted">{new Date(item.createdAt+"Z").toLocaleString()} · {item.status}</p></div>{item.status!=="approved"&&<Button size="sm" onClick={()=>void moderate(item,"approved")}>Approve</Button>}</div><p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{item.message}</p><div className="mt-4 flex flex-wrap gap-2">{item.status!=="pending"&&<Button size="sm" variant="secondary" onClick={()=>void moderate(item,"pending")}>Set pending</Button>}{item.status!=="rejected"&&<Button size="sm" variant="secondary" onClick={()=>void moderate(item,"rejected")}>Reject</Button>}<Button size="sm" variant="danger" onClick={()=>void remove(item)}>Delete</Button></div></CardBody></Card>)}</div>}
+ </div>;
+}
