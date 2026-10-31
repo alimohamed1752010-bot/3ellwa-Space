@@ -43,7 +43,7 @@ Standard CRUD plus search, filter, sort, and reorder where noted:
 - announcements and guestbook moderation: CRUD, approve, delete
 - site-settings: GET, PUT (SEO, privacy, robots, maintenance, retention). Search indexing defaults to disabled; robots.txt blocks crawling and sitemap.xml is unavailable until explicitly enabled.
 - publish: POST /api/admin/publish, GET /api/admin/publish/history
-- domains: Part 10
+- domains: GET /api/admin/domains returns the Cloudflare zone, DNS records, and Worker custom domains; GET /api/admin/domains/dns-check?hostname=<subdomain> checks A, AAAA, and CNAME answers through Cloudflare public DNS. The DNS-check endpoint is session-protected, accepts only subdomains inside the configured zone, and makes no DNS changes.
 
 ## Links (Part 3)
 Public:
