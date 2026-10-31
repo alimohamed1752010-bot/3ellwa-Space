@@ -140,7 +140,7 @@ app.all("*", async (c) => {
   const robots = indexable ? "index,follow" : "noindex,nofollow";
   const meta = isAdmin
     ? '<meta name="3w-shell" content="admin"><meta name="3w-base" content="' + escapeAttr(adminPath!) + '">'
-    : '<meta name="3w-shell" content="public"><meta name="description" content="' + escapeAttr(pageDescription) + '"><meta name="robots" content="' + robots + '"><meta property="og:title" content="' + escapeAttr(pageTitle) + '"><meta property="og:description" content="' + escapeAttr(pageDescription) + '">';
+    : '<meta name="3w-shell" content="public"><meta name="description" content="' + escapeAttr(pageDescription) + '"><meta property="og:title" content="' + escapeAttr(pageTitle) + '"><meta property="og:description" content="' + escapeAttr(pageDescription) + '">';
   const html = (await shell.text()).replace('<meta name="robots" content="noindex" />', '<meta name="robots" content="' + robots + '" />').replace("<title>3ellwa.space</title>", "<title>" + escapeHtml(pageTitle) + "</title>").replace("<!--SHELL_BOOT-->", meta);
   const headers = new Headers({
     "content-type": "text/html; charset=utf-8",
