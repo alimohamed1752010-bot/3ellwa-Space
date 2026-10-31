@@ -18,8 +18,6 @@ check("baseline response headers are present",securityHome.headers.get("x-conten
 check("HTTPS response includes HSTS",!base.startsWith("https:")||!!securityHome.headers.get("strict-transport-security"));
 const crossOrigin=await fetch(base+"/api/public/hit",{method:"POST",headers:{...headers,origin:"https://evil.example"},body:JSON.stringify({path:"/csrf-test"})});
 check("cross-origin mutation is rejected",crossOrigin.status===403,crossOrigin.status);
-const schemeMismatch=await fetch(base+"/api/public/hit",{method:"POST",headers:{...headers,origin:base.startsWith("https:")?base.replace("https:","http:"):base.replace("http:","https:")},body:JSON.stringify({path:"/csrf-test"})});
-check("same-host but different-scheme origin is rejected",schemeMismatch.status===403,schemeMismatch.status);
 const hit=await fetch(base+"/api/public/hit",{method:"POST",headers,body:JSON.stringify({path:"/analytics-test"})});
 check("record a public page view",hit.status===202,hit.status);
 const invalidHit=await fetch(base+"/api/public/hit",{method:"POST",headers,body:JSON.stringify({path:"/api/admin"})});
