@@ -212,15 +212,17 @@ await call("DELETE", `/api/admin/navigation/${pageNav.id}`);
 await call("DELETE", `/api/admin/pages/${pageItem.id}`);
 
 // --- projects
-const projectBody = { name: `Project ${tag}`, slug: `project-${tag}`, description: "A test project", technologies: ["TypeScript", "Cloudflare"], category: "Software", status: "active", startedOn: "2026-01-15", featured: true, visible: true, links: [{ label: "Website", url: "https://example.com" }], gallery: [] };
+const projectImage = await upload(fileOf("PNG_40x20", `project-${tag}.png`), { purpose: "library" });
+check("upload project image", projectImage.status === 201, projectImage.status);
+const projectBody = { name: `Project ${tag}`, slug: `project-${tag}`, description: "A test project", logoAssetId: projectImage.asset.id, coverAssetId: projectImage.asset.id, technologies: ["TypeScript", "Cloudflare"], category: "Software", status: "active", startedOn: "2026-01-15", featured: true, visible: true, links: [{ label: "Website", url: "https://example.com" }], gallery: [{ assetId: projectImage.asset.id, caption: "Project screenshot" }] };
 let projectResponse = await call("POST", "/api/admin/projects", projectBody);
 let project = (await projectResponse.json()).item;
-check("create project with custom link and technologies", projectResponse.status === 201 && project?.slug === projectBody.slug && project.technologies.includes("TypeScript") && project.links[0]?.label === "Website", projectResponse.status);
+check("create project with images, custom link, and technologies", projectResponse.status === 201 && project?.slug === projectBody.slug && project.technologies.includes("TypeScript") && project.links[0]?.label === "Website" && project.gallery[0]?.caption === "Project screenshot" && !!project.logoUrl, projectResponse.status);
 let publicProjects = await (await fetch(base + "/api/public/projects")).json();
 check("public projects list includes visible project", publicProjects.items.some((x) => x.id === project.id));
 let publicProject = await fetch(base + "/api/public/projects/" + project.slug);
 let publicProjectData = (await publicProject.json()).item;
-check("public project detail includes links and description", publicProject.status === 200 && publicProjectData?.description === "A test project" && publicProjectData.links[0]?.url === "https://example.com");
+check("public project detail includes links, gallery, and description", publicProject.status === 200 && publicProjectData?.description === "A test project" && publicProjectData.links[0]?.url === "https://example.com" && publicProjectData.gallery[0]?.caption === "Project screenshot");\ncheck("public projects shell resolves the showcase route", (await fetch(base + "/projects")).status === 200);\ncheck("public projects shell resolves project detail route", (await fetch(base + "/projects/" + project.slug)).status === 200);\nconst projectUsage = await (await call("GET", `/api/admin/media/${projectImage.asset.id}/usage`)).json();\ncheck("media usage identifies project and gallery references", projectUsage.usage.some(x => x.type === "project") && projectUsage.usage.some(x => x.type === "gallery"));
 projectResponse = await call("PUT", `/api/admin/projects/${project.id}`, { ...projectBody, name: "Updated " + tag, visible: false });
 project = (await projectResponse.json()).item;
 publicProjects = await (await fetch(base + "/api/public/projects")).json();
@@ -234,7 +236,7 @@ projectResponse = await call("DELETE", `/api/admin/projects/${copiedProject.id}`
 check("delete duplicated project", projectResponse.status === 200, projectResponse.status);
 projectResponse = await call("DELETE", `/api/admin/projects/${project.id}`);
 check("delete project", projectResponse.status === 200, projectResponse.status);
-check("deleted project disappears publicly", (await fetch(base + "/api/public/projects/" + projectBody.slug)).status === 404);
+check("deleted project disappears publicly", (await fetch(base + "/api/public/projects/" + projectBody.slug)).status === 404);\nawait call("DELETE", `/api/admin/media/${projectImage.asset.id}`);
 
 check("cross-origin POST refused (403)", (await fetch(base + "/api/admin/media/folders", { method: "POST", headers: { ...H, origin: "https://evil.example" }, body: JSON.stringify({ name: "x" }) })).status === 403);
 
