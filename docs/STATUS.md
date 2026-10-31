@@ -35,7 +35,11 @@ Update this file at the end of every part. It is the first thing a new chat read
 - Part 4, checkpoint 1 (media library): WRITTEN, NOT RUN. See "Part 4 checkpoint 1: what was and was not verified" below.
   - Worker: GET /media (search, folder, sort, limit; usage counts), folders CRUD (one level), PUT /media/:id (rename, alt text, move), POST /media/:id/replace (keeps the id), GET /media/:id/usage, POST /media/bulk (move, delete), upload purpose=library (8 MB, folder, alt, real width/height read from the bytes). Avatar, banner, and link uploads behave as before.
   - Admin: Media Library screen (grid, search, sort, folders, drag-and-drop and multi-file upload, select and bulk move/delete, detail dialog with rename, alt text, folder, usage list, replace, copy address, crop/compress, delete with an "in use" warning). Image editor (crop by dragging with a zoom slider, aspect presets, max size, format, quality; GIFs are never re-encoded). Reusable MediaPicker, already used by the profile and link image fields ("Pick existing").
-  - Not built yet in Part 4: pages and block editor, projects, public /projects, page targets in navigation, reserved slugs "links" and "go" (all in the next checkpoints).
+  - Checkpoint 1 (Media Library): implemented, not run. Includes folders, upload/replace/delete, crop/compress, usage warnings, and reusable MediaPicker.
+  - Checkpoint 2 (custom pages): implemented, not run. Includes Pages manager and block editor, public page rendering, metadata/noindex handling, gallery image picker, page targets in navigation, and draft privacy.
+  - Checkpoint 3 (projects): implemented, not run. Includes project CRUD, duplicate, reorder, status/category/technologies, logo and cover images, gallery, website/GitHub/custom links, featured and visibility controls, public /projects directory and /projects/:slug details.
+  - Project and custom-page slugs are checked against each other; /projects is reserved. Media usage includes project logos, covers, and gallery images.
+  - All Part 4 checkpoints are committed but not typechecked, locally tested, browser-tested, or deployed from this environment.
 
 ## In progress
 - Owner walkthrough (still not run): GitHub repo, Cloudflare account, D1 and R2 creation, secrets, remote migration, first deploy. Nothing of this has been run yet.
