@@ -37,6 +37,7 @@ jobs:
           node --check scripts/part4-test.mjs
           node --check scripts/part5-test.mjs
           node --check scripts/part6-test.mjs
+          node --check scripts/part7-test.mjs
       - name: Build production web assets
         run: npm run build:web
 
@@ -85,3 +86,4 @@ jobs:
           node scripts/part4-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
           node scripts/part5-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
           node scripts/part6-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
+          node scripts/part7-test.mjs http://127.0.0.1:8787 "$ADMIN_PASSWORD"
