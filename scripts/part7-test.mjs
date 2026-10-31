@@ -29,6 +29,8 @@ const H={...headers,cookie};
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
 const unauthDns=await fetch(base+"/api/admin/domains/dns-check?hostname=www.3ellwa.space");
 check("domain DNS diagnostics require an admin session",unauthDns.status===401,unauthDns.status);
+const unauthNs=await fetch(base+"/api/admin/domains/ns-check");
+check("public nameserver diagnostics require an admin session",unauthNs.status===401,unauthNs.status);
 const invalidDns=await call("GET","/api/admin/domains/dns-check?hostname=attacker.example");
 const invalidDnsData=await invalidDns.json();
 check("domain DNS diagnostics reject hostnames outside the configured zone",invalidDns.status===400&&invalidDnsData.error?.code==="invalid_hostname",invalidDns.status);
