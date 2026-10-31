@@ -70,14 +70,17 @@ async function list<T>(token: string, path: string): Promise<T[]> {
   const output: T[] = [];
   for (let page = 1; page <= 20; page++) {
     const join = path.includes("?") ? "&" : "?";
-    const result = await cf<T[]>(token, path + join + "per_page=100&page=" + page);
-    output.push(...result);
-    // Cloudflare pagination metadata is needed for large result sets; fetch it with the same query.
     const response = await fetch("https://api.cloudflare.com/client/v4" + path + join + "per_page=100&page=" + page, {
       headers: { authorization: "Bearer " + token, accept: "application/json" },
       signal: AbortSignal.timeout(8000),
     });
-    const body = await response.json() as CfEnvelope<T[]>;
+    let body: CfEnvelope<T[]> | null = null;
+    try { body = await response.json() as CfEnvelope<T[]>; } catch { /* handled below */ }
+    if (!response.ok || !body?.success || !Array.isArray(body.result)) {
+      const message = body?.errors?.map(x => x.message).filter(Boolean).join(" ") || "Cloudflare could not list DNS records.";
+      throw new Error(response.status === 403 ? "Cloudflare refused the request. Check Zone Read, DNS Read, DNS Edit, and Workers Scripts Read permissions." : message);
+    }
+    output.push(...body.result);
     const total = Math.max(1, body.result_info?.total_pages ?? 1);
     if (page >= total) return output;
   }
