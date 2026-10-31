@@ -61,3 +61,5 @@ Settled choices. A new chat must not reopen these unless the owner asks.
 49. Part 9 security baseline: all responses receive nosniff, frame-deny, Permissions Policy, and COOP headers; HTML receives a same-origin-first CSP; HTTPS receives HSTS. Existing stricter media CSP and route-specific referrer policy are preserved. Supplied Origin headers must exactly match the request origin.
 50. Production backups use a separate private R2 bucket, `3ellwa-space-backups`, not the live media bucket. A GitHub Actions workflow exports D1 SQL daily, mirrors R2 media objects, retains SQL exports for 30 days, and requires narrowly scoped repository secrets before activation.
 51. Never test a destructive D1 restore on the production database. Restore drills use a disposable database; production recovery requires a fresh export, a confirmed bookmark, and an explicit operator decision.
+
+52. Global search indexing defaults to disabled. `robots.txt` disallows crawling and `sitemap.xml` returns 404 until the owner explicitly enables indexing; noindex is a privacy preference, not access control.
