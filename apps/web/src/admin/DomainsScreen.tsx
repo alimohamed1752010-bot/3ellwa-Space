@@ -14,6 +14,7 @@ type DnsCheck = {
   hostname: string;
   resolver: string;
   hasAddress: boolean;
+  hasAnswer: boolean;
   records: Array<{ type: "A" | "AAAA" | "CNAME"; status: number; answers: string[] }>;
   checkedAt: string;
 };
@@ -93,7 +94,7 @@ export default function DomainsScreen() {
             {setup && <div className="rounded-control border border-line bg-raised p-3 text-sm">
               <p className="font-medium text-ink">One-time setup</p>
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
-                <li>Create a Cloudflare API token with Zone Read and DNS Read permissions scoped to the 3ellwa.space zone, plus Workers Scripts Read scoped to the Cloudflare account.</li>
+                <li>Create a Cloudflare API token with Zone Read, DNS Read, and DNS Edit permissions scoped to the 3ellwa.space zone, plus Workers Scripts Read scoped to the Cloudflare account.</li>
                 <li>From the project folder, run <code>npx wrangler secret put CF_API_TOKEN</code>.</li>
                 <li>Paste the token into the terminal prompt, not into chat or the website.</li>
                 <li>Wait for the Worker to redeploy, then refresh this screen.</li>
@@ -138,7 +139,7 @@ export default function DomainsScreen() {
                 <div className="mt-1 flex flex-wrap items-center gap-2"><p className="break-all font-mono text-xs text-muted">{record.content}</p><button type="button" className="rounded-control border border-line px-2 py-1 text-xs text-muted hover:text-ink" onClick={() => void copyValue(record.content, "content:" + record.id)}>{copied === "content:" + record.id ? "Copied" : "Copy target"}</button></div>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted"><span className="rounded-control bg-raised px-2 py-1">{record.type}</span><span>{record.proxied ? "Proxied" : "DNS only"}</span><span>TTL {record.ttl === 1 ? "Auto" : record.ttl}</span>{record.name !== data.zone.name && <Button size="sm" variant="secondary" onClick={() => void checkDns(record.name)} disabled={checkingDns === record.name}>{checkingDns === record.name ? "Checking…" : "Check public DNS"}</Button>}</div>
-              {dnsChecks[record.name] && <p className="text-xs text-muted sm:col-span-2" role="status">{dnsChecks[record.name].hasAddress ? "Public DNS resolves to " + dnsChecks[record.name].records.flatMap(item => item.answers).join(", ") : "No public A/AAAA address found."} · Checked {new Date(dnsChecks[record.name].checkedAt).toLocaleTimeString()}</p>}
+              {dnsChecks[record.name] && <p className="text-xs text-muted sm:col-span-2" role="status">{dnsChecks[record.name].hasAnswer ? "Public DNS answers: " + dnsChecks[record.name].records.filter(item => item.answers.length).map(item => item.type + " " + item.answers.join(", ")).join(" · ") : dnsChecks[record.name].records.some(item => item.status === 3) ? "Public DNS reports NXDOMAIN for this hostname." : "No A, AAAA, or CNAME answer was returned."} · Checked {new Date(dnsChecks[record.name].checkedAt).toLocaleTimeString()}</p>}
             </div>) : <p className="text-sm text-muted">{data.records.length ? "No records match this search." : "No DNS records were returned."}</p>}
             {copied && <p className="text-xs text-success" role="status">Copied to clipboard.</p>}
           </CardBody>
