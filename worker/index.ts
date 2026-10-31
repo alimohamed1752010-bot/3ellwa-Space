@@ -112,9 +112,11 @@ app.all("*", async (c) => {
 
   if (path === "/robots.txt") {
     const seoSettings = await loadSeoSettings(env.DB);
+    // Keep crawling allowed while indexing is disabled so crawlers can see the
+    // noindex response header on public pages. Blocking "/" here would hide it.
     const body = seoSettings.indexingEnabled
       ? "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nSitemap: " + url.origin + "/sitemap.xml\n"
-      : "User-agent: *\nDisallow: /\n";
+      : "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\n";
     return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=300" } });
   }
   if (path === "/sitemap.xml") {
