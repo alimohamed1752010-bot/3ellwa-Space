@@ -45,7 +45,7 @@ jobs:
       - name: Configure local-only integration credentials
         shell: bash
         run: |
-          printf 'ADMIN_PASSWORD=%s\\nDISCORD_AUTH_WEBHOOK_URL=%s\\n' 'ci-only-test-password' 'http://127.0.0.1:9999/hook' > .dev.vars
+          printf 'ADMIN_PASSWORD=%s\nDISCORD_AUTH_WEBHOOK_URL=%s\n' 'ci-only-test-password' 'http://127.0.0.1:9999/hook' > .dev.vars
       - name: Apply local D1 migrations
         run: npm run db:migrate:local
       - name: Run Worker integration suite
