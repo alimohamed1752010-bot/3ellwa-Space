@@ -46,7 +46,7 @@ export default function DomainsScreen() {
             {setup && <div className="rounded-control border border-line bg-raised p-3 text-sm">
               <p className="font-medium text-ink">One-time setup</p>
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
-                <li>Create a Cloudflare API token with Zone Read, DNS Read, and Workers Scripts Read permissions, scoped to the 3ellwa.space zone.</li>
+                <li>Create a Cloudflare API token with Zone Read and DNS Read permissions scoped to the 3ellwa.space zone, plus Workers Scripts Read scoped to the Cloudflare account.</li>
                 <li>From the project folder, run <code>npx wrangler secret put CF_API_TOKEN</code>.</li>
                 <li>Paste the token into the terminal prompt, not into chat or the website.</li>
                 <li>Wait for the Worker to redeploy, then refresh this screen.</li>
