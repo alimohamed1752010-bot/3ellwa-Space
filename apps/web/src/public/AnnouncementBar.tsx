@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../shared/api";
 type Notice={id:string;title:string;body:string|null;style:"info"|"success"|"warning"};
-const styles={info:"border-accent/30 bg-accent/10 text-ink",success:"border-ok/30 bg-ok/10 text-ink",warning:"border-warning/30 bg-warning/10 text-ink"};
+const styles={info:"border-accent/30 bg-accent/10 text-ink",success:"border-ok/30 bg-ok/10 text-ink",warning:"border-danger/30 bg-danger/10 text-ink"};
 export default function AnnouncementBar(){
  const [items,setItems]=useState<Notice[]>([]);
  useEffect(()=>{let live=true;api.get<{items:Notice[]}>("/api/public/announcements").then(r=>{if(live)setItems(r.items);}).catch(()=>{});return()=>{live=false;};},[]);
