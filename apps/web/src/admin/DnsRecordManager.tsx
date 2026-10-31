@@ -91,15 +91,20 @@ export default function DnsRecordManager({ zoneName, records, workerDomains, onC
     setError("");
     const proof = { confirmationToken: preview.confirmationToken, confirmName: typedName.trim(), expiresAt: preview.expiresAt };
     try {
+      let auditRecorded = true;
       if (preview.action === "create") {
-        await api.post("/api/admin/domains/records", { name: draft.name, type: draft.type, content: draft.content, ttl: Number(draft.ttl), proxied: draft.proxied, comment: draft.comment || null, ...proof });
+        const result = await api.post<{ auditRecorded?: boolean }>("/api/admin/domains/records", { name: draft.name, type: draft.type, content: draft.content, ttl: Number(draft.ttl), proxied: draft.proxied, comment: draft.comment || null, ...proof });
+        auditRecorded = result.auditRecorded !== false;
       } else if (preview.action === "edit") {
-        await api.put("/api/admin/domains/records/" + recordId, { recordId, content: draft.content, ttl: Number(draft.ttl), proxied: draft.proxied, comment: draft.comment || null, ...proof });
+        const result = await api.put<{ auditRecorded?: boolean }>("/api/admin/domains/records/" + recordId, { recordId, content: draft.content, ttl: Number(draft.ttl), proxied: draft.proxied, comment: draft.comment || null, ...proof });
+        auditRecorded = result.auditRecorded !== false;
       } else {
-        await api.del("/api/admin/domains/records/" + recordId, { recordId, ...proof });
+        const result = await api.del<{ auditRecorded?: boolean }>("/api/admin/domains/records/" + recordId, { recordId, ...proof });
+        auditRecorded = result.auditRecorded !== false;
       }
       reset();
       await onChanged();
+      if (!auditRecorded) setError("The DNS change succeeded, but its audit entry could not be saved. Refresh the history and check Worker logs.");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Cloudflare could not apply the DNS change.");
       setPreview(null);
