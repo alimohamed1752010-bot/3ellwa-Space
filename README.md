@@ -14,13 +14,13 @@ The project is built in parts. Each part has a self-contained prompt in prompts/
 ## One-time setup (Part 2 walks through it step by step)
 1. Create a GitHub repo and push this folder.
 2. Create a Cloudflare account, then a D1 database and an R2 bucket.
-3. Set the secrets listed in .dev.vars.example.
-4. Generate the admin password hash: node scripts/hash-password.mjs "your long passphrase"
+3. Set the Cloudflare Worker secrets `ADMIN_PASSWORD` and `DISCORD_AUTH_WEBHOOK_URL`.
+4. Admin login always requires the plain `ADMIN_PASSWORD`, followed by a one-time code sent to the Discord webhook. No password hash, `SESSION_SECRET`, or OTP bypass is used.
 
 ## Local development
 - `npm install`
-- copy `.dev.vars.example` to `.dev.vars` and fill it in (never commit it)
+- create `.dev.vars` with local `ADMIN_PASSWORD` and `DISCORD_AUTH_WEBHOOK_URL` values (never commit it)
 - `npm run db:migrate:local`
 - `npm run dev` builds the web app and serves everything at http://localhost:8787
 - `npm run typecheck`, `npm run test:web`, `node scripts/smoke-test.mjs <url> <adminPath>`
-- Worker route checks (need `npm run dev` running and DISABLE_OTP=true): `node scripts/part25-test.mjs <url> "password"`, `node scripts/part3-test.mjs <url> "password"`, `node scripts/part4-test.mjs <url> "password"`
+- Worker route checks (need `npm run dev` running and a Discord webhook configured for the mandatory one-time-code step): `node scripts/part25-test.mjs <url> "password"`, `node scripts/part3-test.mjs <url> "password"`, `node scripts/part4-test.mjs <url> "password"`
