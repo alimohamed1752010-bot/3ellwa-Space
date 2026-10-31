@@ -18,9 +18,10 @@ import LayoutEditor from "./LayoutEditor";
 import WidgetsScreen from "./WidgetsScreen";
 import IntegrationsScreen from "./IntegrationsScreen";
 import AnalyticsScreen from "./AnalyticsScreen";
+import OverviewScreen from "./OverviewScreen";
 
 // Screens that exist so far. Everything else in NAV is still an EmptyScreen (see nav.ts for the part that builds it).
-const SCREENS: Record<string, ComponentType> = { analytics: AnalyticsScreen, profile: ProfileScreen, navigation: NavigationScreen, links: LinksScreen, media: MediaScreen, pages: PageManager, projects: ProjectsScreen, appearance: AppearanceScreen, layout: LayoutEditor, widgets: WidgetsScreen, integrations: IntegrationsScreen };
+const SCREENS: Record<string, ComponentType> = { "": OverviewScreen, analytics: AnalyticsScreen, profile: ProfileScreen, navigation: NavigationScreen, links: LinksScreen, media: MediaScreen, pages: PageManager, projects: ProjectsScreen, appearance: AppearanceScreen, layout: LayoutEditor, widgets: WidgetsScreen, integrations: IntegrationsScreen };
 
 type Auth = "loading" | "anon" | "authed";
 
