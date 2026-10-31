@@ -195,7 +195,7 @@ describe("Navigation screen", () => {
     await u.type(within(dialog).getByLabelText("Label"), "Blog");
     await u.type(within(dialog).getByLabelText("Target URL"), "/blog");
     await u.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(await screen.findByRole("button", { name: "Hide Blog" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Hide" })).toBeInTheDocument();
     expect(calls.find((c) => c.method === "POST")!.body).toMatchObject({ label: "Blog", targetType: "url", url: "/blog", pageId: null, openNewTab: false, visible: true });
     await u.click(screen.getByRole("button", { name: "Hide Blog" }));
     expect(await screen.findByText("(hidden)")).toBeInTheDocument();
