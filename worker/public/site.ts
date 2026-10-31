@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { loadProfileRow, parseJsonArray } from "../admin/profile";
 import { mediaUrl } from "../lib/media";
+import { loadPublicTheme } from "../lib/theme";
 
 export const publicRoutes = new Hono<AppEnv>();
 
@@ -11,9 +12,9 @@ interface NavRow { id: string; label: string; target_type: string; url: string |
 // Public data only: no draft fields, no ids of private things, no timestamps. Empty database returns defaults, never an error.
 publicRoutes.get("/site", async (c) => {
   c.header("Cache-Control", "public, max-age=0, must-revalidate");
-  let profile = null, social: SocialRow[] = [], nav: NavRow[] = [];
+  let profile = null, social: SocialRow[] = [], nav: NavRow[] = [], theme = await loadPublicTheme(c.env.DB);
   try {
-    const [p, s, n] = await Promise.all([
+    const [p, s, n, t] = await Promise.all([
       loadProfileRow(c.env.DB),
       c.env.DB.prepare("SELECT id, platform, label, url, icon FROM social_links WHERE visible = 1 ORDER BY sort_order, rowid").all<SocialRow>(),
       c.env.DB.prepare(
@@ -21,8 +22,9 @@ publicRoutes.get("/site", async (c) => {
          FROM navigation_items n LEFT JOIN pages pg ON pg.id = n.page_id AND pg.status = 'published' AND pg.visibility = 'public'
          WHERE n.visible = 1 AND n.parent_id IS NULL ORDER BY n.sort_order, n.rowid`
       ).all<NavRow>(),
+      loadPublicTheme(c.env.DB),
     ]);
-    profile = p; social = s.results; nav = n.results;
+    profile = p; social = s.results; nav = n.results; theme = t;
   } catch {
     // fall through to defaults
   }
@@ -54,6 +56,7 @@ publicRoutes.get("/site", async (c) => {
       }))
       .filter((r) => r.href),
     site: { title: profile?.display_name || "3ellwa.space" },
+    theme,
   });
 });
 
