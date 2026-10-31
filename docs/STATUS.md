@@ -6,7 +6,7 @@ Last reconciled: 2026-10-31
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
 - Latest source changes include domain inventory improvements, SEO privacy hardening, and a manual GitHub Actions deployment fallback (`.github/workflows/deploy.yml`). The crawler-visible noindex follow-up (`6d1dc3b`) is deployed in Worker version 172.
-- Latest GitHub CI run [41222205404](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41222205404) completed successfully on commit `9e91127a0e628150ca47c481351f32147ee8c4bb`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed.
+- Latest GitHub CI run [41222647228](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41222647228) completed successfully on commit `38a4393b5971bd833452343ec0f245b97dd06ebb`; typecheck, web tests, production build, local D1 migrations, and the Worker integration suite all passed.
 - Cloudflare Worker: `3ellwa-space`; latest deployment `0c68b9b2-1cc8-4ca2-bffa-5dfc31307f04`, version `7bd78949-6d07-49c8-9112-18ffadeae561` (version 172), assigned 100% traffic at 16:31 UTC on 2026-10-31. This deployment was built from commit `6d1dc3b279571781c941df547426fed648e4abf2`, which includes the crawler-visible noindex correction.
 - Cron Trigger: `0 * * * *` (hourly UTC).
 - Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`. The Worker runtime `CF_API_TOKEN` is still absent, so the domain inventory cannot query Cloudflare DNS yet. GitHub Actions secrets are separate; the manual deploy fallback also needs repository secret `CF_API_TOKEN`.
@@ -27,7 +27,8 @@ Last reconciled: 2026-10-31
 - Authentication uses plain `ADMIN_PASSWORD` plus mandatory Discord OTP. OTP is single-use, time-limited and rate-limited. Do not add password-only or OTP bypasses.
 - Part 9 checkpoint 1: security headers, CSP, HSTS on HTTPS, Permissions Policy, and exact-origin validation.
 - Part 9 backup preparation: daily D1 export and R2 media mirror workflow, private backup bucket, and recovery documentation. Activation and disposable restore drill remain outstanding.
-- Part 10 checkpoint 1: read-only domain inventory API and admin screen are implemented. The API paginates zones, DNS records, and Worker custom domains (up to 2,000 entries). The screen now supports filtering DNS records and copying hostnames/targets. DNS mutation remains disabled.
+- Part 10 checkpoint 1: read-only domain inventory API and admin screen are implemented. The API paginates zones, DNS records, and Worker custom domains (up to 2,000 entries). The screen supports filtering DNS records and copying hostnames/targets.
+- Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. The UI can run a check per DNS hostname. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check. No DNS records are changed.
 
 ## Verification
 
@@ -43,7 +44,7 @@ Last reconciled: 2026-10-31
 - Add the four GitHub Actions backup secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify both D1 and media objects in the private bucket.
 - Perform a restore drill against a disposable D1 database only.
 - Complete authenticated desktop/mobile visual acceptance, safe media upload/selection, layout loading, public page/project routes, and a real configured integration refresh.
-- Part 10 later checkpoints: add safe DNS record create/edit/delete operations, domain connectivity checks, and setup guidance.
+- Part 10 next: safe DNS record create/edit/delete operations with preview, explicit confirmation, protected-record safeguards, and audit logging. Broader connectivity checks and setup guidance remain later work.
 
 ## Environment
 
