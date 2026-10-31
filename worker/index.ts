@@ -10,6 +10,7 @@ import { linkRoutes } from "./admin/links";
 import { pageRoutes } from "./admin/pages";
 import { projectRoutes } from "./admin/projects";
 import { publicRoutes } from "./public/site";
+import { publicProjectRoutes } from "./public/projects";
 import { mediaPublicRoutes } from "./public/media";
 import { goRoutes, publicLinkRoutes } from "./public/links";
 
@@ -46,6 +47,7 @@ app.route("/api/admin", pageRoutes);
 app.route("/api/admin", projectRoutes);
 
 app.route("/api/public", publicRoutes);
+app.route("/api/public", publicProjectRoutes);
 app.route("/api/public", publicLinkRoutes);
 app.route("/go", goRoutes);
 app.route("/media", mediaPublicRoutes);
