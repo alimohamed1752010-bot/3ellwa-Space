@@ -28,7 +28,7 @@ Last reconciled: 2026-10-31
 
 ## Verification
 
-- Part 6 CI passed on commit `6f521d439352115ef379dbbc40ff0e043a38d02c`. Part 7 CI run [41206738080](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41206738080) passed, including widget and integration API validation tests.
+- Part 6 CI passed on commit `6f521d439352115ef379dbbc40ff0e043a38d02c`. Part 7 CI runs [41206738080](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41206738080) and [41206919665](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41206919665) passed, including widget and integration-backed widget validation.
 - The Part 6 and Part 7 integration suites are included in CI. Part 7 tests use local D1 only and all checks passed.
 - Cloudflare Builds is connected to the GitHub `main` branch. Each qualifying push triggers `npm run deploy`; the successful latest build deployed Worker version 133 at 100% traffic.
 - Production deployment inspection confirms version 142 is assigned 100% traffic and contains the expected bindings. Cloudflare Build logs for commit `38474c9382ff94bb1880868ccf7f35cd7440030a` show successful dependency installation, Vite production build, asset handling, Worker upload and deployment. Part 7 changes are committed to GitHub but are not yet deployed to production. Worker version 116 remains the active 100% production version.
