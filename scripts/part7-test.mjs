@@ -19,7 +19,8 @@ check("reject admin paths from public analytics",invalidHit.status===400,invalid
 r=await fetch(base+"/api/auth/password",{method:"POST",headers,body:JSON.stringify({password:PASSWORD})});const challenge=await r.json();const code=await waitCode();
 const verified=await fetch(base+"/api/auth/code",{method:"POST",headers,body:JSON.stringify({challengeId:challenge.challengeId,code})});
 const cookie=(verified.headers.get("set-cookie")??"").split(";")[0];check("password plus Discord OTP creates a session",verified.status===200&&!!cookie,verified.status);
-const H={...headers,cookie};\nconst analytics=await call("GET","/api/admin/analytics/summary?days=7");const analyticsData=await analytics.json();check("analytics summary includes the tracked page view",analytics.status===200&&analyticsData.summary.views>=1,analytics.status);
+const H={...headers,cookie};
+const analytics=await call("GET","/api/admin/analytics/summary?days=7");const analyticsData=await analytics.json();check("analytics summary includes the tracked page view",analytics.status===200&&analyticsData.summary.views>=1,analytics.status);
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
 const get=async path=>(await call("GET",path)).json();
 const originalRaw=(await get("/api/admin/layout")).published;
