@@ -28,7 +28,7 @@ Last reconciled: 2026-10-31
 - Part 9 checkpoint 1: security headers, CSP, HSTS on HTTPS, Permissions Policy, and exact-origin validation.
 - Part 9 backup preparation: daily D1 export and R2 media mirror workflow, private backup bucket, and recovery documentation. Activation and disposable restore drill remain outstanding.
 - Part 10 checkpoint 1: read-only domain inventory API and admin screen are implemented. The API paginates zones, DNS records, and Worker custom domains (up to 2,000 entries). The screen supports filtering DNS records and copying hostnames/targets.
-- Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check.
+- Part 10 checkpoint 2: admin-only public DNS diagnostics check A, AAAA, and CNAME answers through Cloudflare 1.1.1.1 for validated subdomains inside the configured zone. This is a resolver-specific DNS check, not a global propagation guarantee or HTTP health check. A separate zone NS check compares the resolver-visible NS answer with Cloudflare-assigned nameservers; it does not directly inspect the registrar parent-zone delegation.
 - Part 10 checkpoint 3: DNS record create/edit/delete API and UI are implemented for A, AAAA, and CNAME subdomain records. Writes require a two-minute HMAC preview token, fresh Cloudflare state, typed hostname confirmation, and an explicit UI checkbox. The typed hostname is included in the mutation request and must match the preview; the confirmation callback tracks the typed value correctly. Apex records, standard service hostnames, unsupported record types, CNAME conflicts, and Worker custom domains are protected. API token stays server-side. CI and the Cloudflare build/deployment both passed. No production DNS change has been executed.
 
 ## Verification
@@ -46,7 +46,7 @@ Last reconciled: 2026-10-31
 - Add the four GitHub Actions backup secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify both D1 and media objects in the private bucket.
 - Perform a restore drill against a disposable D1 database only.
 - Complete authenticated desktop/mobile visual acceptance, safe media upload/selection, layout loading, public page/project routes, and a real configured integration refresh.
-- Part 10 next: configure the Worker token with DNS Edit, then test only against a disposable subdomain with explicit owner approval. Broader service connectivity checks remain later work.
+- Part 10 next: configure the Worker token with DNS Edit, then test only against a disposable subdomain with explicit owner approval. Broader service connectivity checks remain later work; arbitrary HTTP probing is intentionally excluded until a strict safe target model exists.
 
 ## Environment
 
