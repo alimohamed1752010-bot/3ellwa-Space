@@ -36,10 +36,11 @@ Never test restore against the production database. Use a separate disposable D1
 The workflow `.github/workflows/backup-d1.yml` is configured to run daily at 02:30 UTC and can also be started manually. It:
 
 1. Requests a D1 SQL export and polls until Cloudflare reports completion.
-2. Downloads the time-limited signed export URL without printing it to logs.
-3. Compresses and stores the SQL file under `d1/` in `3ellwa-space-backups`.
-4. Synchronizes media objects from `3ellwa-space-media` into the backup bucket's `media/` prefix.
-5. Removes D1 SQL exports older than 30 days. Media objects removed from the live bucket are intentionally not automatically deleted from the backup copy.
+2. Downloads the time-limited signed export URL without printing it to logs and rejects an empty export.
+3. Compresses the SQL file, validates it with `gzip -t`, creates a SHA-256 checksum, and stores both under `d1/` in `3ellwa-space-backups`.
+4. Reads the uploaded object's metadata and fails if its stored size differs from the local compressed export.
+5. Synchronizes media objects from `3ellwa-space-media` into the backup bucket's `media/` prefix and reports the resulting object count.
+6. Removes D1 SQL exports and checksum files older than 30 days. Media objects removed from the live bucket are intentionally not automatically deleted from the backup copy.
 
 ### Required GitHub Actions secrets
 
