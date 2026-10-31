@@ -7,7 +7,7 @@ export type SeoSettings={indexingEnabled:boolean;siteTitle:string;siteDescriptio
 export const DEFAULT_SEO:SeoSettings={indexingEnabled:true,siteTitle:"3ellwa.space",siteDescription:"Personal website, projects, links, and updates."};
 export async function loadSeoSettings(db:D1Database):Promise<SeoSettings>{
  const row=await db.prepare("SELECT published_json FROM site_settings WHERE key='seo_privacy'").first<{published_json:string|null}>();
- try{const value=row?.published_json?JSON.parse(row.published_json):{};return {indexingEnabled:value.indexingEnabled===true,siteTitle:typeof value.siteTitle==="string"?value.siteTitle:DEFAULT_SEO.siteTitle,siteDescription:typeof value.siteDescription==="string"?value.siteDescription:""};}catch{return DEFAULT_SEO;}
+ try{const value=row?.published_json?JSON.parse(row.published_json):{};return {indexingEnabled:typeof value.indexingEnabled==="boolean"?value.indexingEnabled:DEFAULT_SEO.indexingEnabled,siteTitle:typeof value.siteTitle==="string"?value.siteTitle:DEFAULT_SEO.siteTitle,siteDescription:typeof value.siteDescription==="string"?value.siteDescription:DEFAULT_SEO.siteDescription};}catch{return DEFAULT_SEO;}
 }
 export const seoRoutes=new Hono<AppEnv>();
 const schema=z.object({indexingEnabled:z.boolean(),siteTitle:z.string().trim().min(1).max(120),siteDescription:z.string().trim().max(300)}).strict();
