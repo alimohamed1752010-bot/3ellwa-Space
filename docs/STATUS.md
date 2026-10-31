@@ -5,71 +5,44 @@ Last reconciled: 2026-10-31
 ## Current verified state
 
 - Repository: `alimohamed1752010-bot/3ellwa-Space`, default branch `main`.
-- Latest application checkpoint: Part 9 checkpoint 1 (baseline security headers and strict Origin validation deployed); backup automation is prepared but awaiting GitHub Actions secrets.
-- Latest fully verified CI run before the Part 9 auth-suite addition: [41214353663](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214353663), passed typecheck, 65 web tests, production build, and local Worker integration tests including the new response-header checks. A follow-up CI run is validating the expanded auth-flow suite.
-- Cloudflare Worker: `3ellwa-space`; latest security-header deployment `efd33c52-5d65-4841-a820-7f5877eb241f`, version ID `6527099e-90c0-43d3-b0d9-92637ecb9d30`, assigned **100% traffic**.
-- Cron Trigger verified through Cloudflare API: `0 * * * *` (hourly, UTC).
-- Production bindings verified: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`.
-- Production D1 database: `3ellwa-space-db`. Migrations `0001_init.sql`, `0002_theme_presets.sql`, and `0003_layout_publishing.sql` are applied. The Part 6 `homepage_layout` setting and `publish_history` table were verified.
+- Latest source checkpoint before Part 10: Part 9 security checkpoint 1, with Part 7 and Part 8 deployed.
+- Latest GitHub CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) completed successfully on commit `7336adcccbde4b9db263a537fbd2677ab3601135`; both typecheck/web/build and local Worker integration jobs passed.
+- Cloudflare Worker: `3ellwa-space`; deployment `efd33c52-5d65-4841-a820-7f5877eb241f`, version `6527099e-90c0-43d3-b0d9-92637ecb9d30`, assigned 100% traffic at last inspection.
+- Cron Trigger: `0 * * * *` (hourly UTC).
+- Production bindings: D1 `DB`, R2 `MEDIA`, static assets `ASSETS`, secrets `ADMIN_PASSWORD`, `ADMIN_PATH`, and `DISCORD_AUTH_WEBHOOK_URL`.
 - Public domain: https://3ellwa.space.
-- Separate private R2 backup bucket created: `3ellwa-space-backups` (EEUR).
-- A full authenticated browser/visual acceptance pass has not been completed.
+- Separate private R2 backup bucket: `3ellwa-space-backups`. It currently contains no objects under `d1/` or `media/`.
+- Production backup workflow is committed but no successful backup has been verified. The four GitHub Actions secrets in `docs/BACKUP.md` remain required.
+- Full authenticated browser/visual acceptance has not been completed.
 
 ## Implemented
 
-- Part 1: architecture, schema, API contract, docs and prompt pack.
-- Part 1.5 / Part 2: Cloudflare Worker scaffold, authentication backend, shared UI, public/admin shells and routing.
-- Part 2.5: profile, social links, navigation, public homepage and media upload basics.
-- Part 3: links manager, categories, bulk actions, import/export, QR codes, click tracking and public `/links`.
-- Part 4: Media Library, custom pages, project manager, public project directory and project details.
-- Part 5: theme engine and Appearance Studio, including presets, custom themes, live preview, background modes, typography, surfaces, layout styling and motion controls.
-- Part 6: Layout Studio, responsive section visibility, section ordering/configuration, unified publishing, publish history and snapshot inspection. Pages and themes save drafts and publish through the unified publishing flow.
-- Part 7 checkpoint 1: widget framework with authenticated CRUD, duplicate/delete, ordering, enable/disable, safe type-specific configuration, public data endpoint, homepage rendering and Layout section picker. Built-in widgets: text, clock, countdown and quote.
-- Part 7 checkpoint 2: public GitHub profile and Minecraft server integrations, strict input validation, fixed provider endpoints, server-side requests, normalized cached snapshots and opt-in public exposure.
-- Part 7 checkpoint 3: integration-backed GitHub and Minecraft homepage widgets. Widgets require an enabled, successfully tested matching integration.
-- Part 7 checkpoint 4: hourly Cloudflare Cron Trigger refresh for enabled integrations, public freshness timestamps, widget age labels, and stale-cache preservation during transient provider outages.
-- Part 8 checkpoint 1: public page-view collection with daily pseudonymous visitor IDs, referrer host and coarse device/browser metadata; admin analytics summary, traffic trends, top pages, referrers, devices, and 90-day event purge; admin Overview and Analytics screens.
-- Part 8 checkpoint 2: public guestbook with pending-by-default submissions, honeypot and per-IP-hash rate limit; admin moderation (approve/reject/delete); timed site-wide announcements with public visibility filtering; admin announcement manager. The analytics route tracker is mounted in the public router.
-- Part 8 checkpoint 3: site-wide public indexing enabled by default; new public custom pages default indexable; per-page noindex supported; robots.txt and sitemap.xml generated by the Worker; server-rendered page title, description, Open Graph metadata, and X-Robots-Tag. The secret admin route remains noindex/nofollow. Production SEO settings row verified enabled.
-- Authentication uses plain `ADMIN_PASSWORD` plus mandatory Discord OTP. The code is single-use, time-limited and rate-limited. Do not add password-only or OTP bypasses. Do not add `ADMIN_PASSWORD_HASH` or `SESSION_SECRET`.
-- Part 9 checkpoint 1: global browser security headers, HTML Content Security Policy, HSTS on HTTPS, Permissions Policy, and exact-origin comparison for supplied Origin headers. Media retains its stricter per-file CSP.
-- Part 9 backup setup: `docs/DEPLOYMENT.md`, `docs/MAINTENANCE.md`, `docs/BACKUP.md`, and `.github/workflows/backup-d1.yml` added. Workflow requires repository secrets `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` before the first scheduled/manual backup can run.
-- Cloudflare reported a production D1 SQL export completed on 2026-10-31. Its signed download URL was temporary; no durable R2 SQL snapshot has yet been verified. A restore drill has not been completed.
+- Parts 1 through 8: core site, admin, links, pages, projects, themes, layout, widgets, GitHub/Minecraft integrations, analytics, guestbook, announcements, SEO and indexing.
+- Authentication uses plain `ADMIN_PASSWORD` plus mandatory Discord OTP. OTP is single-use, time-limited and rate-limited. Do not add password-only or OTP bypasses.
+- Part 9 checkpoint 1: security headers, CSP, HSTS on HTTPS, Permissions Policy, and exact-origin validation.
+- Part 9 backup preparation: daily D1 export and R2 media mirror workflow, private backup bucket, and recovery documentation. Activation and disposable restore drill remain outstanding.
+- Part 10 checkpoint 1 (in progress): domain inventory API and admin screen scaffolded. The endpoint reads the `3ellwa.space` zone, its DNS records, and Worker custom domains. Cloudflare API token is server-only and never sent to the browser.
 
 ## Verification
 
-- CI run [41212545425](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41212545425) passed both jobs: typecheck/web tests/production build and local Worker integration tests, including SEO defaults and robots/sitemap checks.
-- Local Part 7 integration tests confirm the scheduled handler runs successfully with no enabled providers. Provider network refreshes are not called in CI.
-- Cloudflare Builds watches the GitHub `main` branch. The successful Part 8 checkpoint 3 build deployed Worker version 162. Cloudflare deployment inspection confirms 100% traffic on that version and the expected bindings.
-- Cloudflare's schedules API confirms the hourly cron expression is registered.
-- The remote Part 6 D1 migration and layout/publish-history queries were verified directly.
-- Do not run destructive integration suites against production. Integration tests that create/delete content must use isolated local D1/R2.
+- CI run [41214821552](https://github.com/alimohamed1752010-bot/3ellwa-Space/actions/runs/41214821552) passed both jobs before the Part 10 files were added.
+- Cloudflare API inspection confirmed the Worker, hourly schedule, D1/R2 bindings, and the separate backup bucket.
+- Cloudflare API inspection confirmed no backup objects currently exist under `d1/` or `media/`.
+- Part 10 changes have not yet been built, typechecked, deployed, or tested. Do not treat the new domain screen as live until CI and the Cloudflare deployment are verified.
 
 ## Remaining acceptance work
 
-- Add the four GitHub Actions secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify the SQL export and media mirror in `3ellwa-space-backups`.
-- Perform a restore drill against a disposable D1 database. Never use the production database for a restore test.
-- Complete the authenticated desktop/mobile visual acceptance pass and safe media upload/selection check.
-
-- Confirm the Layout screen loads in the owner's authenticated browser after migration 0003.
-- Visually inspect the public homepage and admin dashboard at desktop and mobile widths.
-- Exercise one safe media upload/selection and verify usage warnings. Avoid deleting real owner content.
-- Verify a published custom page, project detail route, navigation targets and live public theme.
-- Confirm a real configured GitHub or Minecraft integration refreshes successfully after the next hourly trigger.
-
-## Next
-
-- Add more public integrations such as Steam only after provider behavior and privacy are reviewed.
-- Spotify and Discord presence require provider-specific authorization and a verified encrypted credential design before implementation. Do not collect or expose OAuth secrets without that design.
-- Part 8 checkpoint 3 is implemented and deployed. Search engine discovery can take time after enabling indexing; submitting the sitemap to search engines is a separate optional step.
-- Part 9: security checkpoint 1 is deployed; expanded auth tests and backup automation are in progress. Backup activation and restore drill remain outstanding.
-- Part 10: subdomain and domain management.
+- Add `CF_API_TOKEN` as a Worker secret with Zone Read, DNS Read, and Workers Scripts Read permissions, scoped to the 3ellwa.space zone, before testing the domain inventory endpoint.
+- Add the four GitHub Actions backup secrets listed in `docs/BACKUP.md`, run the backup workflow manually, and verify both D1 and media objects in the private bucket.
+- Perform a restore drill against a disposable D1 database only.
+- Complete authenticated desktop/mobile visual acceptance, safe media upload/selection, layout loading, public page/project routes, and a real configured integration refresh.
+- Part 10 later checkpoints: add safe DNS record create/edit/delete operations, domain connectivity checks, and setup guidance.
 
 ## Environment
 
 - Hosting: Cloudflare Workers + static assets.
 - Database: Cloudflare D1 (`3ellwa-space-db`, binding `DB`).
 - Object storage: Cloudflare R2 (`3ellwa-space-media`, binding `MEDIA`).
-- Backup storage: Cloudflare R2 (`3ellwa-space-backups`, private bucket; used by the scheduled backup workflow).
+- Backup storage: Cloudflare R2 (`3ellwa-space-backups`, private).
 - Static asset binding: `ASSETS`.
-- Wrangler configuration: `wrangler.jsonc`.
+- Wrangler config: `wrangler.jsonc`.

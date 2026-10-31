@@ -22,9 +22,9 @@ import OverviewScreen from "./OverviewScreen";
 import GuestbookScreen from "./GuestbookScreen";
 import AnnouncementsScreen from "./AnnouncementsScreen";
 import SeoPrivacyScreen from "./SeoPrivacyScreen";
+import DomainsScreen from "./DomainsScreen";
 
-// Screens that exist so far. Everything else in NAV is still an EmptyScreen (see nav.ts for the part that builds it).
-const SCREENS: Record<string, ComponentType> = { "": OverviewScreen, analytics: AnalyticsScreen, guestbook: GuestbookScreen, announcements: AnnouncementsScreen, "seo-privacy": SeoPrivacyScreen, profile: ProfileScreen, navigation: NavigationScreen, links: LinksScreen, media: MediaScreen, pages: PageManager, projects: ProjectsScreen, appearance: AppearanceScreen, layout: LayoutEditor, widgets: WidgetsScreen, integrations: IntegrationsScreen };
+const SCREENS: Record<string, ComponentType> = { "": OverviewScreen, analytics: AnalyticsScreen, guestbook: GuestbookScreen, announcements: AnnouncementsScreen, "seo-privacy": SeoPrivacyScreen, domains: DomainsScreen, profile: ProfileScreen, navigation: NavigationScreen, links: LinksScreen, media: MediaScreen, pages: PageManager, projects: ProjectsScreen, appearance: AppearanceScreen, layout: LayoutEditor, widgets: WidgetsScreen, integrations: IntegrationsScreen };
 
 type Auth = "loading" | "anon" | "authed";
 

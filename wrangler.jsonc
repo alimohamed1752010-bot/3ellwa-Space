@@ -1,4 +1,3 @@
-
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "3ellwa-space",
@@ -9,6 +8,10 @@
   },
   "triggers": {
     "crons": ["0 * * * *"]
+  },
+  "vars": {
+    "CF_ACCOUNT_ID": "a287b5112e47d5501d7eb24d0a8adf7e",
+    "CF_ZONE_NAME": "3ellwa.space"
   },
   "assets": {
     "directory": "./apps/web/dist",

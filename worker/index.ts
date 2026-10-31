@@ -15,6 +15,7 @@ import { publishRoutes } from "./admin/publish";
 import { widgetRoutes } from "./admin/widgets";
 import { integrationRoutes, refreshEnabledIntegrations } from "./admin/integrations";
 import { analyticsRoutes } from "./admin/analytics";
+import { domainRoutes } from "./admin/domains";
 import { publicRoutes } from "./public/site";
 import { publicProjectRoutes } from "./public/projects";
 import { publicWidgetRoutes } from "./public/widgets";
@@ -83,6 +84,7 @@ app.route("/api/admin", publishRoutes);
 app.route("/api/admin", widgetRoutes);
 app.route("/api/admin", integrationRoutes);
 app.route("/api/admin", analyticsRoutes);
+app.route("/api/admin", domainRoutes);
 app.route("/api/admin", guestbookAdminRoutes);
 app.route("/api/admin", announcementRoutes);
 app.route("/api/admin", seoRoutes);
@@ -99,8 +101,6 @@ app.route("/go", goRoutes);
 app.route("/media", mediaPublicRoutes);
 
 app.all("/api/*", (c) => apiError(c, 404, "not_found", "Not found."));
-
-// Everything else: static files, the public shell, the admin shell, or the normal 404.
 app.all("/go/*", () => new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } }));
 
 app.all("*", async (c) => {
@@ -129,18 +129,14 @@ app.all("*", async (c) => {
     return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=300" } });
   }
 
-  // 1. Built static files (JS, CSS, images).
   const asset = await env.ASSETS.fetch(req.raw);
-  // 304 (browser revalidating a cached file) is not "ok" but is still a hit; without this a refresh gets the HTML shell instead of the CSS/JS.
   if (asset.ok || asset.status === 304) return asset;
 
-  // 2. Decide which shell, if any.
   const adminPath = normalizeAdminPath(env.ADMIN_PATH);
   const isAdmin = adminPath !== null && (path === adminPath || path.startsWith(adminPath + "/"));
   const isPublic = !isAdmin && (path === "/" || path === "/links" || path === "/projects" || path === "/guestbook" || (path.startsWith("/projects/") ? await publicProjectExists(env, path.slice("/projects/".length)) : await publicPageExists(env, path)));
   const status = isAdmin || isPublic ? 200 : 404;
 
-  // 3. Serve the HTML shell. Wrong admin paths and unknown paths take the exact same branch (status 404).
   const seoSettings = await loadSeoSettings(env.DB);
   const shell = await env.ASSETS.fetch(new Request(new URL("/index.html", url)));
   if (!shell.ok) return new Response("Frontend not built. Run: npm run build:web", { status: 500 });
@@ -186,13 +182,9 @@ async function publicPageExists(env: Env, path: string): Promise<boolean> {
   try {
     const slug = path.replace(/^\/+/, "");
     if (!slug || slug.length > 120 || slug.includes("//")) return false;
-    const row = await env.DB.prepare(
-      "SELECT 1 AS ok FROM pages WHERE slug = ? AND status = 'published' AND visibility = 'public'"
-    ).bind(slug).first();
+    const row = await env.DB.prepare("SELECT 1 AS ok FROM pages WHERE slug = ? AND status = 'published' AND visibility = 'public'").bind(slug).first();
     return row !== null;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 function escapeAttr(s: string): string {
