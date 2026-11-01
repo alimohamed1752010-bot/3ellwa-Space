@@ -72,3 +72,21 @@ body::before{
 .hv-shine::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgb(255 255 255 / .14) 50%,transparent 65%);transform:translateX(-120%);transition:transform .6s ease;pointer-events:none}
 .hv-shine:hover::after,.hv-shine:focus-visible::after{transform:translateX(120%)}
 @media(prefers-reduced-motion:reduce){.hv-lift:hover,.hv-scale:hover,.hv-lift:focus-visible,.hv-scale:focus-visible{transform:none}.hv-shine::after{display:none}}
+
+/* Noiz-style effects. All of these are decoration only and switch off with reduced motion or the theme's animation setting. */
+.fx-glow-soft{box-shadow:var(--3w-card-shadow),0 0 0 1px color-mix(in srgb,var(--fx-glow) 40%,transparent),0 0 40px -8px color-mix(in srgb,var(--fx-glow) 55%,transparent)}
+@keyframes fx-pulse{
+ 0%,100%{box-shadow:var(--3w-card-shadow),0 0 0 1px color-mix(in srgb,var(--fx-glow) 30%,transparent),0 0 24px -8px color-mix(in srgb,var(--fx-glow) 40%,transparent)}
+ 50%{box-shadow:var(--3w-card-shadow),0 0 0 1px color-mix(in srgb,var(--fx-glow) 60%,transparent),0 0 54px -6px color-mix(in srgb,var(--fx-glow) 70%,transparent)}
+}
+.fx-glow-pulse{box-shadow:var(--3w-card-shadow),0 0 0 1px color-mix(in srgb,var(--fx-glow) 40%,transparent),0 0 40px -8px color-mix(in srgb,var(--fx-glow) 55%,transparent)}
+.rise.fx-glow-pulse{animation:rise var(--3w-motion-duration) ease-out both,fx-pulse 4.5s ease-in-out infinite}
+.fx-avatar-glow{box-shadow:0 0 0 2px color-mix(in srgb,var(--fx-glow) 70%,transparent),0 0 28px -2px color-mix(in srgb,var(--fx-glow) 65%,transparent)}
+.fx-glitch{position:relative;display:inline-block}
+.fx-glitch::before,.fx-glitch::after{content:attr(data-text);position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0}
+.fx-glitch::before{color:#ff2d75;clip-path:inset(0 0 55% 0);animation:fx-glitch-a 3.4s infinite steps(1)}
+.fx-glitch::after{color:#25d9ff;clip-path:inset(55% 0 0 0);animation:fx-glitch-b 2.9s infinite steps(1)}
+@keyframes fx-glitch-a{0%,91%,100%{opacity:0;transform:none}92%{opacity:.9;transform:translate(3px,-1px)}95%{opacity:.9;transform:translate(-3px,1px)}97%{opacity:0}}
+@keyframes fx-glitch-b{0%,89%,100%{opacity:0;transform:none}90%{opacity:.9;transform:translate(-3px,1px)}94%{opacity:.9;transform:translate(3px,-1px)}96%{opacity:0}}
+@keyframes fx-enter-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.fx-enter-text{animation:fx-enter-pulse 2.2s ease-in-out infinite;background:transparent;border:0;cursor:pointer}
