@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import { Button, Card } from "../shared/ui";
 import LinksPage, { LinksSection } from "./LinksPage";
@@ -10,6 +11,12 @@ import WidgetBlock from "./WidgetBlock";
 import { useLinks } from "./useLinks";
 import { isEmptySite, PublicSiteProvider, usePublicSite } from "./useSite";
 import { api } from "../shared/api";
+import { profileCardLook } from "../shared/profileColors";
+import { DEFAULT_FX } from "../shared/fx";
+import { cn } from "../shared/cn";
+import NameText from "./fx/NameText";
+import SiteFx from "./fx/SiteFx";
+import TiltCard from "./fx/TiltCard";
 import type { PublicSite } from "./useSite";
 import GuestbookPage from "./GuestbookPage";
 import AnnouncementBar from "./AnnouncementBar";
@@ -87,21 +94,30 @@ function ProfileView({ site }: { site: PublicSite }) {
   const p = site.profile;
   useEffect(() => { document.title = site.site.title; }, [site.site.title]);
   const name = p.displayName || p.username || "";
+  const tokens = site.theme?.tokens;
+  const look = profileCardLook(tokens?.profile);
+  const fx = tokens?.fx ?? DEFAULT_FX;
+  const glowColor = tokens?.profile && tokens.profile.mode !== "off"
+    ? (tokens.profile.mode === "solid" ? tokens.profile.primary : tokens.profile.accent)
+    : "var(--3w-accent)";
+  const cardStyle = { ...look?.style, "--fx-glow": glowColor } as CSSProperties;
+  const avatarShape = fx.avatarShape === "square" ? "rounded-lg" : fx.avatarShape === "rounded" ? "rounded-3xl" : "rounded-full";
   return (
       <div className="w-full">
-        <Card className="rise overflow-hidden">
-          <div className="aspect-[3/1] w-full bg-gradient-to-br from-accent-strong/30 via-raised to-surface">
+        <TiltCard enabled={fx.tilt}>
+        <Card className={cn("rise overflow-hidden", fx.glow === "soft" && "fx-glow-soft", fx.glow === "pulse" && "fx-glow-pulse")} style={cardStyle}>
+          <div className="aspect-[3/1] w-full bg-gradient-to-br from-accent-strong/30 via-raised to-surface" style={look ? { background: "rgb(0 0 0 / .12)" } : undefined}>
             {p.bannerUrl && <img src={p.bannerUrl} alt="" className="size-full object-cover" />}
           </div>
           <div className="px-5 pb-7 sm:px-8">
             <div className="-mt-12 flex items-end sm:-mt-14">
-              <div className="size-24 shrink-0 overflow-hidden rounded-full border-4 border-surface bg-raised sm:size-28">
+              <div className={cn("size-24 shrink-0 overflow-hidden border-4 border-surface bg-raised sm:size-28", avatarShape, fx.avatarGlow && "fx-avatar-glow")}>
                 {p.avatarUrl ? <img src={p.avatarUrl} alt={name ? `${name}'s avatar` : "Avatar"} className="size-full object-cover" /> : <div aria-hidden className="size-full" style={{ background: "radial-gradient(circle at 35% 30%, #c4b5fd, #6d28d9 70%)" }} />}
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-              {name && <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>}
+              {name && <h1 className="text-2xl font-semibold tracking-tight"><NameText text={name} effect={fx.nameEffect} /></h1>}
               {p.badges.map((b, i) => (
                 <span key={i} className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs text-accent-soft" style={b.color ? { borderColor: b.color + "66", color: b.color } : undefined}>{b.label}</span>
               ))}
@@ -145,6 +161,7 @@ function ProfileView({ site }: { site: PublicSite }) {
             )}
           </div>
         </Card>
+        </TiltCard>
       </div>
   );
 }
@@ -198,6 +215,7 @@ export default function PublicApp() {
     <BrowserRouter>
       <AnalyticsTracker />
       <PublicSiteProvider>
+      <SiteFx />
       <AnnouncementBar />
       <Routes>
         <Route path="/" element={<Home />} />
