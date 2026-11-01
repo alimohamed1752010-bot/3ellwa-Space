@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv, Env } from "./env";
 import { authRoutes } from "./auth/routes";
+import { mcpPairingRoutes } from "./auth/mcp-pairing";
 import { requireSession } from "./auth/session";
 import { apiError, normalizeAdminPath } from "./lib/http";
 import { profileRoutes } from "./admin/profile";
@@ -70,6 +71,7 @@ app.get("/api/health", async (c) => {
 });
 
 app.route("/api/auth", authRoutes);
+app.route("/api/auth", mcpPairingRoutes);
 
 app.use("/api/admin/*", requireSession);
 app.get("/api/admin/ping", (c) => c.json({ ok: true }));
