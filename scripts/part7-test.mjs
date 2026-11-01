@@ -27,6 +27,16 @@ const verified=await fetch(base+"/api/auth/code",{method:"POST",headers,body:JSO
 const cookie=(verified.headers.get("set-cookie")??"").split(";")[0];check("password plus Discord OTP creates a session",verified.status===200&&!!cookie,verified.status);
 const H={...headers,cookie};
 const call=(method,path,body)=>fetch(base+path,{method,headers:H,body:body===undefined?undefined:JSON.stringify(body)});
+const pairingResponse=await call("POST","/api/auth/pairing",{});
+const pairingData=await pairingResponse.json();
+check("authenticated owner can create a one-time MCP pairing code",pairingResponse.status===200&&typeof pairingData.code==="string"&&pairingData.code.length>=40&&pairingData.expiresInSeconds===120,pairingResponse.status);
+const pairingExchange=await fetch(base+"/api/auth/mcp-pair",{method:"POST",headers,body:JSON.stringify({code:pairingData.code})});
+const mcpCookie=(pairingExchange.headers.get("set-cookie")??"").split(";")[0];
+check("MCP pairing creates a separate normal admin session",pairingExchange.status===200&&!!mcpCookie,pairingExchange.status);
+const replayPairing=await fetch(base+"/api/auth/mcp-pair",{method:"POST",headers,body:JSON.stringify({code:pairingData.code})});
+check("MCP pairing code cannot be reused",replayPairing.status===401,replayPairing.status);
+const mcpPing=await fetch(base+"/api/admin/ping",{headers:{...headers,cookie:mcpCookie}});
+check("paired MCP session can access authenticated admin diagnostics",mcpPing.status===200,mcpPing.status);
 const unauthDns=await fetch(base+"/api/admin/domains/dns-check?hostname=www.3ellwa.space");
 check("domain DNS diagnostics require an admin session",unauthDns.status===401,unauthDns.status);
 const unauthNs=await fetch(base+"/api/admin/domains/ns-check");
