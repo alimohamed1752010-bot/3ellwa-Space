@@ -19,12 +19,12 @@ mcpPairingRoutes.post("/pairing", requireSession, async c => {
   const code = randomId(32);
   const codeHash = await sha256Hex("mcp-pair:" + code);
   const id = randomId(12);
-  await c.env.DB.prepare(
-    "INSERT INTO mcp_pairings (id, code_hash, expires_at) VALUES (?, ?, datetime('now', '+2 minutes'))"
-  ).bind(id, codeHash).run();
-  await c.env.DB.prepare(
-    "DELETE FROM mcp_pairings WHERE expires_at < datetime('now') OR used_at IS NOT NULL"
-  ).run();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM mcp_pairings"),
+    c.env.DB.prepare(
+      "INSERT INTO mcp_pairings (id, code_hash, expires_at) VALUES (?, ?, datetime('now', '+2 minutes'))"
+    ).bind(id, codeHash)
+  ]);
   c.header("Cache-Control", "no-store");
   return c.json({ code, expiresInSeconds: PAIRING_SECONDS });
 });
