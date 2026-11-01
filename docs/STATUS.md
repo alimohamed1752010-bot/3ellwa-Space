@@ -69,3 +69,17 @@ Last reconciled: 2026-10-31
 - Backup storage: Cloudflare R2 (`3ellwa-space-backups`, private).
 - Static asset binding: `ASSETS`.
 - Wrangler config: `wrangler.jsonc`.
+
+
+## MCP pairing milestone — 2026-11-01
+
+- PR #3 merged to `main` as commit `9bcd59504fbee8ef8879f4dd31e6d6104150278f`.
+- GitHub Actions passed: MCP protocol/pairing tests, Worker + web typecheck, web tests, production asset build, local D1 migration application, and the local Worker integration suite. The integration suite verified pairing code generation, one-use exchange, replay rejection, and authenticated admin ping.
+- Production D1 migration `0005_mcp_pairings.sql` applied and verified at 09:52:05 UTC. It creates only the `mcp_pairings` table and expiry index; migration history records id 5.
+- Production Worker `3ellwa-space` deployed as version 194 (`e97a59ba-3068-4003-9bfa-80df9df3b027`), assigned 100% traffic at 09:52:47 UTC. Existing bindings remain unchanged.
+- The separate MCP Worker `3ellwa-space-mcp` deployed as version `b9be1cc7-ad39-4123-a25a-58659cd2b84a`, with the dedicated KV binding `SESSIONS` pointing to namespace `3ellwa-space-mcp-sessions`. workers.dev remains enabled and previews disabled.
+- Admin UI now includes **MCP Access**, which issues a high-entropy, two-minute, one-use pairing code only to an authenticated owner session. Older unused codes are invalidated when a new code is issued. Only a SHA-256 hash is stored in D1.
+- MCP exchanges the code for a separate normal 12-hour website session, stores the HttpOnly cookie in its isolated KV namespace, and returns an opaque handle. The password, Discord OTP, and raw cookie are never returned to the model.
+- MCP tools now include `mcp_pair`, `mcp_admin_status`, and `mcp_logout`. Admin diagnostics are read-only. Content editing, publishing, deletion, DNS mutation, direct D1/R2 access, and generic proxy tools are not exposed.
+- Site Manager plugin updated to version 1.0.2 with the pairing workflow and security boundary documented.
+- Verification limitation: Cloudflare API confirms both deployments, 100% traffic assignment for the website Worker, and the MCP KV binding. A live external HTTP/MCP handshake against the workers.dev endpoint could not be independently verified from the connected runtime. Do not describe the live handshake as confirmed until checked from an external client.
