@@ -18,5 +18,6 @@ export const NAV: NavItem[] = [
   { to: "announcements", label: "Announcements", part: 8, blurb: "Publish timed notices across the public site." },
   { to: "domains", label: "Domains", part: 10, blurb: "Subdomains and DNS status." },
   { to: "seo-privacy", label: "SEO & Privacy", part: 8, blurb: "Indexing, metadata, robots, and privacy controls." },
+  { to: "mcp-access", label: "MCP Access", part: 10, blurb: "Pair the Site Manager plugin using a short-lived one-time code." },
   { to: "settings", label: "Settings", part: 8, blurb: "Site-wide settings and maintenance mode." },
 ];
