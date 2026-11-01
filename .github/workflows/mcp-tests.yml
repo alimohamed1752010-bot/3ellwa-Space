@@ -1,0 +1,36 @@
+name: MCP protocol and pairing tests
+
+on:
+  pull_request:
+    paths:
+      - "mcp/**"
+      - "worker/auth/mcp-pairing.ts"
+      - "migrations/**"
+      - "apps/web/src/admin/McpAccessScreen.tsx"
+      - "apps/web/src/admin/AdminApp.tsx"
+      - "apps/web/src/admin/nav.ts"
+      - "worker/index.ts"
+      - "scripts/part7-test.mjs"
+      - ".github/workflows/mcp-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "mcp/**"
+      - "worker/auth/mcp-pairing.ts"
+      - "migrations/**"
+      - ".github/workflows/mcp-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test MCP protocol and pairing security
+        run: node --test mcp/worker.test.mjs
