@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "3ellwa-space-mcp",
+  "main": "./worker.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "c1065dd14cc545f48d427c9758869c8e"
+    }
+  ]
+}
