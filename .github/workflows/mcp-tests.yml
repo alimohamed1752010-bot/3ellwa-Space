@@ -1,0 +1,30 @@
+name: MCP protocol tests
+
+on:
+  pull_request:
+    paths:
+      - "mcp/**"
+      - ".github/workflows/mcp-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "mcp/**"
+      - ".github/workflows/mcp-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test MCP protocol and read-only boundary
+        run: node --test mcp/worker.test.mjs
