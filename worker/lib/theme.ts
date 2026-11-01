@@ -2,6 +2,19 @@ import { z } from "zod";
 import { mediaUrl } from "./media";
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex color.");
+const profileColorsSchema = z.object({
+  mode:z.enum(["off","solid","gradient"]),primary:hex,accent:hex,angle:z.number().int().min(0).max(360),
+}).strict();
+export const DEFAULT_PROFILE_COLORS:z.infer<typeof profileColorsSchema>={mode:"off",primary:"#5b4bdb",accent:"#b44cd6",angle:160};
+const fxSchema = z.object({
+  background:z.enum(["none","aurora","stars"]),
+  glow:z.enum(["none","soft","pulse"]),
+  tilt:z.boolean(),cursorGlow:z.boolean(),
+  avatarShape:z.enum(["circle","rounded","square"]),avatarGlow:z.boolean(),
+  nameEffect:z.enum(["none","glitch","decrypt"]),
+  enterScreen:z.object({enabled:z.boolean(),text:z.string().trim().min(1).max(40)}).strict(),
+}).strict();
+export const DEFAULT_FX:z.infer<typeof fxSchema>={background:"none",glow:"none",tilt:false,cursorGlow:false,avatarShape:"circle",avatarGlow:false,nameEffect:"none",enterScreen:{enabled:false,text:"Click to enter"}};
 export const themeTokensSchema = z.object({
   colors: z.object({
     bg:hex,surface:hex,raised:hex,line:hex,lineStrong:hex,ink:hex,muted:hex,
@@ -32,6 +45,8 @@ export const themeTokensSchema = z.object({
     enabled:z.boolean(),intensity:z.enum(["subtle","balanced","expressive"]),
     duration:z.number().int().min(80).max(800),hoverEffects:z.boolean(),pageTransitions:z.boolean(),
   }).strict(),
+  profile:profileColorsSchema.default(DEFAULT_PROFILE_COLORS),
+  fx:fxSchema.default(DEFAULT_FX),
 }).strict().superRefine((v,ctx)=>{if((v.background.mode==="image"||v.background.mode==="video")&&!v.background.assetId)ctx.addIssue({code:z.ZodIssueCode.custom,path:["background","assetId"],message:"Choose a background file."});});
 export type ThemeTokens = z.infer<typeof themeTokensSchema>;
 
@@ -86,7 +101,9 @@ export const DEFAULT_THEME_TOKENS:ThemeTokens={
     "duration": 180,
     "hoverEffects": true,
     "pageTransitions": true
-  }
+  },
+  "profile": DEFAULT_PROFILE_COLORS,
+  "fx": DEFAULT_FX
 };
 
 export function parseThemeTokens(raw:string|null|undefined):ThemeTokens{

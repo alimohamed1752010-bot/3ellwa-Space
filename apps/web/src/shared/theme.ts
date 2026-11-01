@@ -1,3 +1,6 @@
+import type { ProfileColors } from "./profileColors";
+import type { FxTokens } from "./fx";
+
 export interface ThemeTokens {
   colors:{bg:string;surface:string;raised:string;line:string;lineStrong:string;ink:string;muted:string;accent:string;accentStrong:string;accentSoft:string;danger:string;ok:string};
   background:{mode:"solid"|"gradient"|"image"|"video";color:string;gradientStart:string;gradientEnd:string;gradientAngle:number;assetId?:string|null;assetUrl?:string|null;overlay:number;position:"center"|"top"|"bottom"};
@@ -5,6 +8,8 @@ export interface ThemeTokens {
   typography:{family:"system"|"serif"|"mono";monoFamily:"system"|"mono";baseSize:number;headingScale:number;fontWeight:number;lineHeight:number};
   layout:{containerWidth:number;density:"compact"|"comfortable"|"spacious";spacing:number};
   animation:{enabled:boolean;intensity:"subtle"|"balanced"|"expressive";duration:number;hoverEffects:boolean;pageTransitions:boolean};
+  profile?:ProfileColors;
+  fx?:FxTokens;
 }
 export interface PublicTheme { name:string; tokens:ThemeTokens }
 
